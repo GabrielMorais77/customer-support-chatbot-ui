@@ -3,5 +3,5 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/customer-support-chatbot-ui/', // <-- tem que ser EXATAMENTE o nome do repositório
+  base: '/customer-support-chatbot-ui/',
 })
