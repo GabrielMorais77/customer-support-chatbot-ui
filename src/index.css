@@ -1,0 +1,16 @@
+/* Reset básico */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #e5e7eb; /* só pra não ficar preto caso algo quebre */
+}
+
+#root {
+  min-height: 100vh;
+}
