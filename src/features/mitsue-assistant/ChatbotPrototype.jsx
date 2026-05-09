@@ -4,7 +4,6 @@ import {
   BadgeCheck,
   Bot,
   CalendarDays,
-  CheckCircle2,
   ChevronRight,
   Clock3,
   Ellipsis,
@@ -31,7 +30,6 @@ import {
   defaultReply,
   detectUrgencySignals,
   findMatchingFaq,
-  formatDateTime,
   formatFileSize,
   formatShortDate,
   inferAreaFromText,
@@ -1091,13 +1089,7 @@ export default function ChatbotPrototype() {
 
       <header className="flow-hero">
         <div>
-          <p className="hero-kicker">Protótipo inspirado na referência anexa</p>
-          <h1>Fluxo mobile de atendimento 24/7 para Mitsue Borges.</h1>
-          <p className="hero-copy">
-            Reestruturei o aplicativo para seguir a lógica visual da imagem em uma única interface funcional:
-            entrada no atendimento, página do site, assistente virtual, identificação, meus chamados, fila,
-            detalhes, avaliação e comentário final.
-          </p>
+          <h1>Central de Atendimento Mitsue Borges 24/7.</h1>
         </div>
         <div className="hero-status-stack">
           <article>
@@ -1169,7 +1161,7 @@ export default function ChatbotPrototype() {
             <strong>
               {currentStepIndex + 1} de {FLOW_STEPS.length}
             </strong>
-            <p>O fluxo continua completo, mas agora aparece só dentro da experiência funcional do celular.</p>
+            <p>Navegação completa em uma única interface funcional.</p>
           </div>
 
           <div className="phone-stage">
@@ -1273,19 +1265,6 @@ export default function ChatbotPrototype() {
         </aside>
       </main>
 
-      <footer className="flow-footer">
-        <span>
-          Histórico salvo em `localStorage` para prototipação. Quando você quiser, eu posso transformar esse fluxo
-          no layout final de produção ou integrar com backend real.
-        </span>
-        {activeRecord ? <span>Última atualização: {formatDateTime(activeRecord.createdAt)}</span> : null}
-        {isAuthenticated ? (
-          <span className="auth-pill">
-            <CheckCircle2 size={14} />
-            Sessão identificada
-          </span>
-        ) : null}
-      </footer>
     </div>
   );
 }
