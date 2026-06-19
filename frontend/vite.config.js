@@ -3,5 +3,6 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/customer-support-chatbot-ui/',
+  base: '/',
+  appType: 'spa',
 })

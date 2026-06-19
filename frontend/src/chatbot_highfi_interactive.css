@@ -1024,9 +1024,214 @@
   display: none;
 }
 
+.info-bubble-error {
+  border-color: rgba(190, 40, 40, 0.24);
+  background: #fff1f1;
+  color: #9d2929;
+}
+
+.info-bubble-success {
+  border-color: rgba(36, 140, 87, 0.22);
+  background: #effaf4;
+  color: #147044;
+}
+
+.phone-primary-button:disabled,
+.phone-secondary-button:disabled,
+.phone-outline-button:disabled,
+.compose-send:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.reset-button-secondary {
+  margin-left: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(181, 148, 95, 0.34);
+}
+
+.admin-app {
+  min-height: 100vh;
+}
+
+.admin-hero {
+  align-items: stretch;
+}
+
+.admin-login-shell,
+.admin-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.admin-login-shell {
+  display: grid;
+  place-items: center;
+  min-height: 48vh;
+}
+
+.admin-login-card {
+  width: min(100%, 420px);
+  padding: 20px;
+}
+
+.admin-login-card .phone-outline-button,
+.admin-toolbar-actions .phone-outline-button,
+.admin-toolbar-actions .phone-secondary-button,
+.admin-filter-form .phone-primary-button,
+.admin-status-row .phone-secondary-button,
+.admin-reply-form .phone-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+  gap: 18px;
+}
+
+.admin-panel {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--flow-border);
+  border-radius: 24px;
+  background: var(--flow-surface);
+  box-shadow: 0 18px 48px rgba(24, 39, 52, 0.08);
+}
+
+.admin-toolbar {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-filter-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.45fr) minmax(180px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.admin-filter-form label,
+.admin-status-row label {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-filter-form span,
+.admin-status-row span {
+  font-size: 0.74rem;
+  color: var(--flow-muted);
+}
+
+.admin-filter-form input,
+.admin-filter-form select,
+.admin-status-row select,
+.admin-reply-form textarea {
+  width: 100%;
+  border: 1px solid rgba(106, 111, 156, 0.14);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--flow-text);
+  padding: 10px 12px;
+}
+
+.admin-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-ticket-list {
+  display: grid;
+  gap: 10px;
+  max-height: 620px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.admin-ticket-row {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 14px;
+  text-align: left;
+  border: 1px solid rgba(106, 111, 156, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.admin-ticket-row.is-active,
+.admin-ticket-row:hover {
+  border-color: rgba(181, 148, 95, 0.34);
+  background: var(--flow-accent-wash);
+}
+
+.admin-ticket-row strong,
+.admin-detail-head h2,
+.admin-empty-state strong {
+  color: var(--flow-primary-strong);
+}
+
+.admin-ticket-row span:not(.ticket-status),
+.admin-ticket-row small {
+  color: var(--flow-muted);
+}
+
+.admin-detail-panel {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.admin-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--flow-primary);
+}
+
+.admin-detail-head h2 {
+  margin: 0;
+}
+
+.admin-status-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.admin-message-list {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.admin-reply-form {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-empty-state {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 360px;
+  color: var(--flow-muted);
+  text-align: center;
+}
+
 @media (max-width: 1080px) {
   .flow-hero,
-  .prototype-grid {
+  .prototype-grid,
+  .admin-shell {
     grid-template-columns: 1fr;
   }
 
@@ -1040,9 +1245,12 @@
     padding: 18px 12px 24px;
   }
 
-  .interactive-header {
+  .interactive-header,
+  .admin-filter-form,
+  .admin-status-row {
     flex-direction: column;
     align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
   .phone-device {

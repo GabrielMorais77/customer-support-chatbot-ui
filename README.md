@@ -1,139 +1,174 @@
-# Customer Support Chatbot UI
+# Customer Support Chatbot MVP
 
-Prototipo de uma interface web para atendimento digital 24/7, desenvolvida em React com foco em experiencia mobile, navegacao funcional e organizacao modular para futuras integracoes com APIs, IA e sistemas reais de suporte.
+MVP real de atendimento digital 24/7 com frontend React + Vite, backend Laravel API e banco SQLite. O visual mobile do prototipo foi preservado, mas os chamados agora sao persistidos no backend com protocolo, mensagens, painel de atendente, status e avaliacao.
 
-## 1. Objetivo do projeto
+## Estrutura
 
-O projeto simula uma central de atendimento digital para Mitsue Borges, com enfase em:
-
-- triagem inicial de demandas;
-- organizacao de chamados e protocolos;
-- acompanhamento de fila e status;
-- experiencia visual inspirada em aplicativos mobile modernos;
-- base tecnica preparada para evolucao futura.
-
-## 2. Visao geral da interface
-
-A aplicacao apresenta uma unica interface funcional em formato de smartphone, com navegacao interna entre etapas do atendimento:
-
-- abertura do atendimento;
-- pagina institucional;
-- assistente virtual;
-- identificacao do solicitante;
-- lista de chamados;
-- fila de atendimento;
-- detalhes do chamado;
-- avaliacao;
-- comentario final.
-
-## 3. Estrutura principal do projeto
-
-Estrutura resumida:
-
-```text
+```txt
 customer-support-chatbot-ui/
-|-- public/
-|-- src/
-|   |-- App.jsx
-|   |-- main.jsx
-|   |-- index.css
-|   |-- chatbot_highfi_interactive.jsx
-|   |-- chatbot_highfi_interactive.css
-|   `-- features/
-|       `-- mitsue-assistant/
-|           |-- ChatbotPrototype.jsx
-|           |-- config.js
-|           |-- storage.js
-|           |-- utils.js
-|           `-- components/
-|               |-- ChatField.jsx
-|               `-- MessageBubble.jsx
-|-- index.html
-|-- package.json
-`-- README.md
+|-- frontend/
+|   |-- package.json
+|   |-- src/
+|   |-- index.html
+|
+|-- backend/
+|   |-- app/
+|   |-- database/
+|   |-- routes/
+|   |-- .env.example
+|   |-- composer.json
+|
+|-- README.md
 ```
 
-## 4. Execucao local
+## Requisitos
+
+- Node.js 20+
+- PHP 8.2+
+- Composer
+- Extensoes PHP comuns do Laravel, incluindo `pdo_sqlite` e `sqlite3`
+
+## Backend
 
 ```bash
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate --seed
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+No Windows PowerShell, use:
+
+```powershell
+cd backend
+composer install
+Copy-Item .env.example .env
+php artisan key:generate
+New-Item -ItemType File -Force database/database.sqlite
+php artisan migrate --seed
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+O seeder cria um admin local:
+
+- email: `admin@local.test`
+- senha: `admin123`
+
+Altere essa senha antes de qualquer uso fora do ambiente local.
+
+## Frontend
+
+```bash
+cd frontend
 npm install
+cp .env.example .env
 npm run dev
 ```
 
-Para gerar a versao de producao:
+No Windows PowerShell:
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.example .env
+npm run dev
+```
+
+Variavel principal do frontend:
+
+```env
+VITE_API_URL=http://localhost:8000/api
+```
+
+Depois de iniciar os dois servidores:
+
+- Atendimento publico: `http://localhost:5173`
+- Painel admin: `http://localhost:5173/admin`
+- API Laravel: `http://localhost:8000/api`
+
+## Fluxo Publico
+
+1. Usuario abre o atendimento.
+2. Seleciona a area.
+3. Preenche nome, e-mail, telefone, assunto e descricao.
+4. O frontend chama `POST /api/tickets`.
+5. O backend grava no SQLite e gera protocolo `MIT-AAAA-000001`.
+6. Usuario consulta por protocolo e e-mail.
+7. Usuario envia mensagens complementares.
+8. Usuario envia avaliacao final, encerrando o chamado.
+
+O `localStorage` ficou apenas para rascunho, ultimo protocolo/e-mail consultado e preferencias locais. A fonte principal dos chamados e o SQLite via API.
+
+## Fluxo Admin
+
+1. Acesse `/admin`.
+2. Entre com o admin local.
+3. Liste chamados e filtre por status.
+4. Abra um chamado.
+5. Responda como atendente.
+6. Altere status para `open`, `waiting`, `in_progress`, `answered` ou `closed`.
+
+## Endpoints
+
+### Publicos
+
+```txt
+POST /api/tickets
+GET /api/tickets/lookup?protocol=MIT-2026-000001&email=email@exemplo.com
+POST /api/tickets/{protocol}/messages
+POST /api/tickets/{protocol}/feedback
+```
+
+### Admin
+
+```txt
+POST /api/admin/login
+POST /api/admin/logout
+GET /api/admin/tickets
+GET /api/admin/tickets/{id}
+PATCH /api/admin/tickets/{id}/status
+POST /api/admin/tickets/{id}/messages
+```
+
+As rotas admin usam token Bearer retornado pelo login.
+
+## Banco de Dados
+
+As migrations criam:
+
+- `tickets`
+- `ticket_messages`
+- `ticket_feedback`
+- `admin_users`
+
+O SQLite fica em:
+
+```txt
+backend/database/database.sqlite
+```
+
+Esse arquivo nao deve ser versionado.
+
+## Ponto de Extensao para IA
+
+Ainda nao ha IA integrada. O ponto de extensao esta em:
+
+```txt
+backend/app/Services/TicketTriageAdvisor.php
+```
+
+Hoje ele usa uma regra deterministica simples para prioridade. No futuro, esse servico pode chamar um provedor de IA sem alterar os controllers.
+
+## Verificacao
+
+Frontend verificado localmente com:
 
 ```bash
 npm run build
+npm run lint
 ```
 
-## 5. Funcionalidades implementadas
-
-As funcionalidades implementadas no prototipo incluem:
-
-- interface responsiva com simulacao de aplicativo mobile;
-- central unica de atendimento com navegacao funcional entre etapas;
-- pagina inicial com destaque visual e botao principal de inicio do atendimento;
-- botao "Iniciar atendimento" com destaque visual e microinteracoes;
-- selo visual de atendimento "24/7" para reforco de disponibilidade;
-- tela de chat com layout completo, mensagens, campo de digitacao e envio;
-- fluxo de identificacao do usuario antes do acompanhamento do chamado;
-- area de "Meus chamados" com consulta de protocolos e abertura de detalhes;
-- tela de fila de atendimento com status, ordem de espera e envio de mensagens;
-- tela de detalhes do chamado, avaliacao e comentario final;
-- organizacao modular em componentes React, utilitarios e camada de persistencia local.
-
-## 6. Fluxos principais simulados
-
-Nesta secao sao descritos os fluxos principais simulados no prototipo, evidenciando sua navegabilidade e funcionamento.
-
-### 6.1 Fluxo 01 - Entrada no sistema
-
-- o usuario acessa a aplicacao pela URL disponibilizada;
-- o sistema exibe a tela inicial com destaque para o atendimento digital;
-- o usuario visualiza o call-to-action principal e o selo de disponibilidade 24/7.
-
-### 6.2 Fluxo 02 - Iniciar atendimento
-
-- o usuario clica no botao "Iniciar atendimento";
-- o sistema direciona para a interface principal do assistente;
-- a tela apresenta conversa inicial, areas de atendimento e formulario reduzido de triagem.
-
-### 6.3 Fluxo 03 - Triagem e identificacao
-
-- o usuario seleciona a area da demanda;
-- informa dados basicos, resumo do caso e, quando necessario, dados tecnicos;
-- pode anexar documentos para pre-analise;
-- em seguida escolhe entre se identificar ou continuar como visitante.
-
-### 6.4 Fluxo 04 - Acompanhamento de chamados
-
-- apos a triagem, o sistema gera um protocolo de atendimento;
-- o usuario acessa a area "Meus chamados";
-- visualiza protocolos, status, area relacionada e opcoes para abrir detalhes ou fila.
-
-### 6.5 Fluxo 05 - Fila, detalhes e retorno
-
-- o usuario acompanha a fila de atendimento;
-- pode enviar mensagem complementar durante a espera;
-- acessa os detalhes do chamado com resumo, status e prazo estimado de retorno.
-
-### 6.6 Fluxo 06 - Avaliacao e comentario final
-
-- ao concluir a navegacao, o usuario pode avaliar a experiencia;
-- o sistema permite registrar nota, estrelas e comentario complementar;
-- as informacoes ficam vinculadas ao chamado no historico local do prototipo.
-
-## 7. Tecnologias utilizadas
-
-As tecnologias utilizadas para construcao do prototipo foram:
-
-- React - biblioteca JavaScript para construcao de interfaces modernas;
-- Vite - ferramenta de build e desenvolvimento rapido para projetos frontend;
-- CSS customizado com variaveis e componentes visuais proprios;
-- lucide-react - biblioteca de icones modernos para compor a interface;
-- localStorage - utilizado para persistencia local de rascunhos, protocolos e historico;
-- ESLint - utilizado para validacao e padrao minimo de qualidade do codigo.
-
-### 7.1 Observacao tecnica
-
-Neste projeto, a interface atual foi estilizada com CSS customizado, sem dependencia de CDN para o layout principal. A persistencia tambem foi mantida localmente no navegador, o que e adequado para prototipos navegaveis e provas de conceito. Em uma evolucao futura, recomenda-se integrar backend real, autenticacao, banco de dados e servicos externos de atendimento.
+Neste ambiente nao foi possivel executar o backend porque PHP e Composer nao estao instalados. Assim que esses requisitos estiverem disponiveis, rode `php artisan migrate --seed` e teste os endpoints.
