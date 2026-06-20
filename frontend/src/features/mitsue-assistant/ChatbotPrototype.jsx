@@ -3,7 +3,6 @@ import {
   ArrowRight,
   BadgeCheck,
   Bot,
-  CalendarDays,
   ChevronRight,
   Clock3,
   Ellipsis,
@@ -19,19 +18,19 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import '../../chatbot_highfi_interactive.css';
 import {
+  askAssistant,
   createTicket,
   lookupTicket,
   sendTicketFeedback,
   sendTicketMessage,
+  uploadTicketAttachments,
 } from '../../services/api';
 import { AREA_CONFIG, EMPTY_INTAKE } from './config';
 import ChatField from './components/ChatField';
 import MessageBubble from './components/MessageBubble';
 import {
   clearDraft,
-  loadDraft,
   loadLastLookup,
-  saveDraft,
   saveLastLookup,
 } from './storage';
 import {
@@ -43,8 +42,8 @@ import {
 } from './utils';
 
 const FLOW_STEPS = [
-  { id: 'landing', title: 'Abertura' },
-  { id: 'assistant', title: 'Novo chamado' },
+  { id: 'assistant', title: 'Atendimento' },
+  { id: 'landing', title: 'Inicio' },
   { id: 'tickets', title: 'Meus chamados' },
   { id: 'queue', title: 'Mensagens' },
   { id: 'details', title: 'Detalhes' },
@@ -53,13 +52,53 @@ const FLOW_STEPS = [
 ];
 
 const SCREEN_BACK_MAP = {
-  assistant: 'landing',
+  landing: 'assistant',
   tickets: 'assistant',
   queue: 'details',
   details: 'tickets',
   rating: 'details',
   comment: 'details',
 };
+
+const DEFAULT_AREA = 'edital';
+
+const ENTRY_OPTIONS = [
+  {
+    areaKey: 'edital',
+    label: 'Analisar edital e regras',
+    description: 'Cargo, requisitos, datas, etapas, cotas e eliminacao.',
+  },
+  {
+    areaKey: 'planoEstudos',
+    label: 'Montar plano de estudos',
+    description: 'Cronograma, revisoes, metas e simulados.',
+  },
+  {
+    areaKey: 'duvidasMateria',
+    label: 'Tirar duvida simples',
+    description: 'Materia, questao, documento ou regra operacional.',
+  },
+  {
+    areaKey: 'recursoRevisao',
+    label: 'Recurso ou revisao',
+    description: 'Questao, nota, discursiva, TAF, prova oral ou eliminacao.',
+  },
+  {
+    areaKey: 'laudoParecer',
+    label: 'Laudo ou parecer',
+    description: 'Coleta para documento tecnico assinado por especialista.',
+  },
+  {
+    areaKey: 'acaoBanca',
+    label: 'Caso contra banca',
+    description: 'Triagem tecnica com possivel avaliacao juridica.',
+  },
+  {
+    areaKey: 'peritaHumana',
+    label: 'Encaminhar a perita',
+    description: 'Resumo interno, documentos, prazo e proxima acao.',
+  },
+];
 
 const PUBLIC_EMPTY_INTAKE = {
   ...EMPTY_INTAKE,
@@ -82,34 +121,33 @@ function createWelcomeMessages() {
       id: 'welcome-1',
       role: 'assistant',
       type: 'text',
-      title: 'Assistente virtual',
-      text: 'O atendimento digital registra chamados reais, gera protocolo e organiza as mensagens para resposta humana.',
+      title: 'Assistente tecnico 24/7',
+      text: 'Sou a primeira camada de triagem para concursos publicos. Posso orientar sobre edital, estudos, duvidas simples, recursos e preparar casos complexos para a perita humana.',
       createdAt,
     },
     {
       id: 'welcome-2',
       role: 'assistant',
       type: 'text',
-      title: 'Como posso ajudar?',
-      text: 'Escolha uma area, preencha os dados do solicitante e descreva o problema para abrir o chamado.',
+      title: 'Seguranca e limites',
+      text: 'Nao substituo advogado ou perita, nao assino laudo e nao prometo aprovacao, anulacao de questao ou vitoria judicial.',
       createdAt,
     },
   ];
 }
 
 function getInitialDraftState() {
-  const draft = loadDraft();
   const lastLookup = loadLastLookup();
 
   return {
-    screen: draft?.screen || 'landing',
-    selectedArea: draft?.selectedArea || 'periciaJudicial',
-    intake: { ...PUBLIC_EMPTY_INTAKE, ...(draft?.intake || {}) },
-    uploadedFiles: Array.isArray(draft?.uploadedFiles) ? draft.uploadedFiles : [],
-    messages: Array.isArray(draft?.messages) && draft.messages.length ? draft.messages : createWelcomeMessages(),
-    lookupForm: { protocol: '', email: '', ...lastLookup, ...(draft?.lookupForm || {}) },
-    ratingForm: draft?.ratingForm || { stars: 5, rating: 5, comment: '' },
-    commentDraft: draft?.commentDraft || '',
+    screen: 'assistant',
+    selectedArea: DEFAULT_AREA,
+    intake: PUBLIC_EMPTY_INTAKE,
+    uploadedFiles: [],
+    messages: createWelcomeMessages(),
+    lookupForm: { protocol: '', email: '', ...lastLookup },
+    ratingForm: { stars: 5, rating: 5, comment: '' },
+    commentDraft: '',
   };
 }
 
@@ -169,13 +207,51 @@ function buildDescription(intake, selectedConfig, uploadedFiles) {
   const fileLines = uploadedFiles.map((file) => `Arquivo informado: ${file.name} (${file.inferredType})`);
 
   return [
+    `Tipo de demanda: ${selectedConfig.label}`,
     intake.objective,
     intake.urgencyNote ? `Urgencia/prazo: ${intake.urgencyNote}` : '',
     detailLines.length ? detailLines.join('\n') : '',
     fileLines.length ? fileLines.join('\n') : '',
+    intake.dataConsent
+      ? 'Consentimento: candidato autorizou o tratamento dos dados informados para triagem do atendimento.'
+      : '',
+    'Observacao: o assistente nao substitui advogado, nao emite laudo e nao garante resultado.',
   ]
     .filter(Boolean)
     .join('\n\n');
+}
+
+function normalizeText(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function buildQuickGuidance(text, selectedArea) {
+  const normalized = normalizeText(text);
+
+  if (normalized.includes('laudo') || normalized.includes('parecer')) {
+    return 'Laudo, parecer tecnico-cientifico e documento assinado precisam de perita humana. Posso coletar finalidade, prazo, documentos, fato controvertido e perguntas tecnicas para encaminhar o caso organizado.';
+  }
+
+  if (normalized.includes('acao') || normalized.includes('liminar') || normalized.includes('judicial')) {
+    return 'Esse tema pode exigir avaliacao juridica. Vou organizar fatos, banca, fase, decisao, prazo, recurso administrativo, documentos e prejuizo concreto, sem afirmar direito liquido e certo.';
+  }
+
+  if (normalized.includes('recurso') || normalized.includes('gabarito') || normalized.includes('questao')) {
+    return 'Para recurso, separe edital, caderno de prova, questao, gabarito, alternativa marcada, fundamento tecnico, bibliografia e prazo. Casos simples podem virar minuta; discursiva, eliminacao e prova pratica pedem revisao humana.';
+  }
+
+  if (normalized.includes('estudo') || normalized.includes('cronograma') || selectedArea === 'planoEstudos') {
+    return 'Para plano de estudos, informe concurso, banca, data da prova, horas por dia, nivel atual e materias fracas. A base e ciclo semanal, revisoes programadas, questoes e simulados.';
+  }
+
+  if (normalized.includes('edital') || normalized.includes('cargo') || selectedArea === 'edital') {
+    return 'Para edital, confira cargo, requisitos, datas, etapas, conteudo programatico, criterios de aprovacao e eliminacao. Se anexar o edital, o protocolo fica melhor preparado para analise.';
+  }
+
+  return 'Posso ajudar com edital, plano de estudos, duvidas de materia, recurso, revisao de prova, laudo, parecer e triagem para perita humana. Escolha uma opcao ou descreva o ocorrido.';
 }
 
 function TicketCard({ record, onOpenDetails, onOpenQueue }) {
@@ -241,6 +317,7 @@ export default function ChatbotPrototype() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAssistantTyping, setIsAssistantTyping] = useState(false);
 
   const selectedConfig = AREA_CONFIG[selectedArea];
   const activeRecord = ticketToRecord(activeTicket);
@@ -249,37 +326,15 @@ export default function ChatbotPrototype() {
   const compactFields = [intake.clientName, intake.email || intake.phone, intake.subject, intake.objective]
     .filter(Boolean)
     .length;
-  const compactAreaFields = useMemo(() => selectedConfig.fields.slice(0, 2), [selectedConfig]);
+  const compactAreaFields = useMemo(() => selectedConfig.fields, [selectedConfig]);
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, screen]);
 
   useEffect(() => {
-    saveDraft({
-      screen,
-      selectedArea,
-      intake,
-      uploadedFiles,
-      messages,
-      lookupForm,
-      ratingForm,
-      commentDraft,
-    });
     saveLastLookup(lookupForm);
-  }, [commentDraft, intake, lookupForm, messages, ratingForm, screen, selectedArea, uploadedFiles]);
-
-  useEffect(() => {
-    if (!initialDraft.lookupForm.protocol || !initialDraft.lookupForm.email) {
-      return;
-    }
-
-    lookupTicket(initialDraft.lookupForm.protocol, initialDraft.lookupForm.email)
-      .then((payload) => setActiveTicket(payload.ticket))
-      .catch(() => {
-        setActiveTicket(null);
-      });
-  }, [initialDraft.lookupForm.email, initialDraft.lookupForm.protocol]);
+  }, [lookupForm]);
 
   function appendMessage(message) {
     setMessages((current) => [
@@ -332,6 +387,10 @@ export default function ChatbotPrototype() {
 
   function handleAreaSelection(areaKey) {
     setSelectedArea(areaKey);
+    setIntake((current) => ({
+      ...current,
+      subject: current.subject || AREA_CONFIG[areaKey].label,
+    }));
     appendMessage({
       role: 'user',
       type: 'text',
@@ -367,18 +426,40 @@ export default function ChatbotPrototype() {
           inferredType: inferDocumentType(file.name),
           preview,
           uploadedAt: new Date().toISOString(),
+          file,
         };
       }),
     );
 
     setUploadedFiles((current) => [...current, ...preparedFiles]);
-    setNotice(`${preparedFiles.length} arquivo(s) adicionados ao rascunho local.`);
+
+    if (activeTicket?.protocol && activeTicket?.email) {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        await uploadTicketAttachments(activeTicket.protocol, activeTicket.email, files);
+        await refreshActiveTicket(activeTicket);
+        setNotice(`${preparedFiles.length} documento(s) enviados para o protocolo.`);
+      } catch (caughtError) {
+        setError(caughtError.message);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      setNotice(`${preparedFiles.length} documento(s) anexados. Eles serao enviados ao abrir o chamado.`);
+    }
+
     event.target.value = '';
   }
 
   function validateTicketPayload(payload) {
     if (!payload.name || !payload.email || !payload.subject || !payload.description) {
       return 'Preencha nome, e-mail, assunto e descricao para abrir o chamado.';
+    }
+
+    if (!intake.dataConsent) {
+      return 'Autorize o tratamento dos dados para que o atendimento seja registrado.';
     }
 
     return '';
@@ -406,7 +487,8 @@ export default function ChatbotPrototype() {
     setNotice('');
 
     try {
-      const created = await createTicket(payload);
+      const files = uploadedFiles.map((item) => item.file).filter(Boolean);
+      const created = await createTicket(payload, files);
       const lookup = { protocol: created.ticket.protocol, email: payload.email };
       const refreshed = await lookupTicket(lookup.protocol, lookup.email);
 
@@ -534,7 +616,17 @@ export default function ChatbotPrototype() {
     }
   }
 
-  function handleChatSubmit() {
+  function buildAssistantHistory() {
+    return messages
+      .filter((message) => message.type === 'text' && ['user', 'assistant'].includes(message.role))
+      .slice(-6)
+      .map((message) => ({
+        role: message.role,
+        content: [message.title, message.text].filter(Boolean).join('\n'),
+      }));
+  }
+
+  async function handleChatSubmit() {
     const trimmed = chatInput.trim();
 
     if (!trimmed) {
@@ -547,18 +639,31 @@ export default function ChatbotPrototype() {
       text: trimmed,
     });
     setChatInput('');
+    setIsAssistantTyping(true);
 
-    appendMessage({
-      role: 'assistant',
-      type: 'text',
-      title: 'Registro do atendimento',
-      text: 'Inclua esse contexto na descricao do chamado para que o atendente receba tudo em um unico protocolo.',
-    });
+    try {
+      const response = await askAssistant(trimmed, selectedConfig.label, buildAssistantHistory());
+      appendMessage({
+        role: 'assistant',
+        type: 'text',
+        title: response.source === 'openrouter' ? 'Resposta do assistente IA' : 'Resposta rapida',
+        text: response.reply || buildQuickGuidance(trimmed, selectedArea),
+      });
+    } catch {
+      appendMessage({
+        role: 'assistant',
+        type: 'text',
+        title: 'Resposta rapida',
+        text: buildQuickGuidance(trimmed, selectedArea),
+      });
+    } finally {
+      setIsAssistantTyping(false);
+    }
   }
 
   function handleResetPrototype() {
-    setScreen('landing');
-    setSelectedArea('periciaJudicial');
+    setScreen('assistant');
+    setSelectedArea(DEFAULT_AREA);
     setIntake(PUBLIC_EMPTY_INTAKE);
     setUploadedFiles([]);
     setMessages(createWelcomeMessages());
@@ -614,14 +719,14 @@ export default function ChatbotPrototype() {
     return (
       <div className="screen-home">
         <div className="screen-sitebar">
-          <span>Mitsue Borges</span>
+          <span>Concursos Publicos</span>
           <button onClick={() => goToScreen('tickets')}>Protocolos</button>
         </div>
         <div className="screen-home-center">
-          <h2>Atendimento 24/7</h2>
-          <p>Abra e acompanhe chamados com protocolo real.</p>
+          <h2>Assistente tecnico 24/7</h2>
+          <p>Editais, estudos, recursos, revisoes e encaminhamento para perita humana.</p>
           <button className="phone-primary-button" onClick={() => goToScreen('assistant')}>
-            Iniciar atendimento
+            Abrir atendimento
           </button>
         </div>
         <button className="chat-fab" onClick={() => goToScreen('assistant')} aria-label="Abrir atendimento">
@@ -635,7 +740,7 @@ export default function ChatbotPrototype() {
   function renderAssistantScreen() {
     return (
       <>
-        <PhoneHeader title="Novo chamado" subtitle="API conectada" showBack onBack={handleBack} />
+        <PhoneHeader title="Assistente Tecnico" subtitle="Concursos publicos" showBack={false} onBack={handleBack} />
         <div className="phone-body">
           {renderFeedbackMessages()}
           <div className="phone-thread">
@@ -646,7 +751,27 @@ export default function ChatbotPrototype() {
                 onProtocolClick={() => activeTicket && goToScreen('details')}
               />
             ))}
+            {isAssistantTyping ? (
+              <div className="message-shell message-shell-assistant typing-bubble">
+                <span />
+                <span />
+                <span />
+              </div>
+            ) : null}
             <div ref={transcriptEndRef} />
+          </div>
+
+          <div className="assistant-menu">
+            {ENTRY_OPTIONS.map((option) => (
+              <button
+                key={option.areaKey}
+                className={`assistant-menu-button ${selectedArea === option.areaKey ? 'is-active' : ''}`}
+                onClick={() => handleAreaSelection(option.areaKey)}
+              >
+                <strong>{option.label}</strong>
+                <span>{option.description}</span>
+              </button>
+            ))}
           </div>
 
           <div className="area-chip-grid">
@@ -664,7 +789,7 @@ export default function ChatbotPrototype() {
           <div className="triage-sheet">
             <div className="triage-sheet-head">
               <div>
-                <p className="mini-eyebrow">Abertura</p>
+                <p className="mini-eyebrow">Triagem tecnica</p>
                 <strong>{selectedConfig.label}</strong>
               </div>
               <span>{uploadedFiles.length} anexo(s)</span>
@@ -687,18 +812,28 @@ export default function ChatbotPrototype() {
                 onChange={handleFieldChange}
               />
               <ChatField
-                field={{ name: 'subject', label: 'Assunto', type: 'text', placeholder: 'Resumo do problema' }}
+                field={{ name: 'subject', label: 'Assunto', type: 'text', placeholder: 'Ex.: Recurso contra questao 42' }}
                 value={intake.subject}
                 onChange={handleFieldChange}
               />
               <ChatField
                 field={{
                   name: 'objective',
-                  label: 'Descricao',
+                  label: 'Relato inicial',
                   type: 'textarea',
-                  placeholder: 'Descreva a demanda, o prazo e o objetivo do atendimento.',
+                  placeholder: 'Descreva o concurso, a banca, a fase, o que aconteceu e o que voce precisa.',
                 }}
                 value={intake.objective}
+                onChange={handleFieldChange}
+              />
+              <ChatField
+                field={{
+                  name: 'urgencyNote',
+                  label: 'Prazo ou urgencia',
+                  type: 'textarea',
+                  placeholder: 'Ex.: recurso vence hoje, prazo judicial aberto, prova amanha.',
+                }}
+                value={intake.urgencyNote}
                 onChange={handleFieldChange}
               />
               {compactAreaFields.map((field) => (
@@ -706,10 +841,34 @@ export default function ChatbotPrototype() {
               ))}
             </div>
 
+            {uploadedFiles.length ? (
+              <div className="attachment-list">
+                {uploadedFiles.slice(-4).map((file) => (
+                  <div key={file.id} className="attachment-chip">
+                    <FileText size={14} />
+                    <span>{file.name}</span>
+                    <small>{file.sizeLabel}</small>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <label className="consent-card">
+              <input
+                type="checkbox"
+                checked={Boolean(intake.dataConsent)}
+                onChange={(event) => handleFieldChange('dataConsent', event.target.checked)}
+              />
+              <span>
+                Autorizo o tratamento dos dados informados para triagem do atendimento. Entendo que o chat nao substitui
+                advogado ou perita humana e nao garante resultado.
+              </span>
+            </label>
+
             <div className="triage-meta">
               <span>{compactFields}/4 dados-base</span>
               <span>{selectedConfig.label}</span>
-              <span>SQLite via API</span>
+              <span>Perita humana como autoridade final</span>
             </div>
 
             <div className="triage-actions">
@@ -727,7 +886,7 @@ export default function ChatbotPrototype() {
             <textarea
               rows="2"
               value={chatInput}
-              placeholder="Digite uma nota para o rascunho..."
+              placeholder="Digite sua duvida ou conte o que aconteceu..."
               onChange={(event) => setChatInput(event.target.value)}
             />
             <button className="compose-send" onClick={handleChatSubmit} aria-label="Enviar nota">
@@ -851,6 +1010,20 @@ export default function ChatbotPrototype() {
                 <strong>{activeTicket.name}</strong>
                 <p>{activeTicket.description}</p>
               </div>
+
+              {activeTicket.attachments?.length ? (
+                <div className="details-card">
+                  <strong>Documentos anexados</strong>
+                  <div className="attachment-list">
+                    {activeTicket.attachments.map((attachment) => (
+                      <div key={attachment.id} className="attachment-chip">
+                        <FileText size={14} />
+                        <span>{attachment.original_name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="detail-actions">
                 <button onClick={() => goToScreen('queue')}>Ver mensagens</button>
@@ -984,11 +1157,16 @@ export default function ChatbotPrototype() {
 
       <header className="flow-hero">
         <div>
-          <h1>Central de Atendimento Mitsue Borges 24/7.</h1>
+          <p className="hero-kicker">Concursos publicos</p>
+          <h1>Assistente Tecnico 24/7 para Concursos Publicos.</h1>
+          <p className="hero-copy">
+            Triagem inteligente para editais, planos de estudo, recursos, revisoes, laudos e casos que precisam de
+            perita humana.
+          </p>
         </div>
         <div className="hero-status-stack">
           <article>
-            <span>Area ativa</span>
+            <span>Frente ativa</span>
             <strong>{selectedConfig.label}</strong>
           </article>
           <article>
@@ -1042,7 +1220,7 @@ export default function ChatbotPrototype() {
             <strong>
               {currentStepIndex + 1} de {FLOW_STEPS.length}
             </strong>
-            <p>Fluxo publico conectado ao backend Laravel.</p>
+            <p>Primeira camada tecnica: orienta o simples e prepara o complexo para revisao humana.</p>
           </div>
 
           <div className="phone-stage">
@@ -1058,46 +1236,46 @@ export default function ChatbotPrototype() {
           <article className="side-card side-card-primary">
             <div className="side-card-head">
               <BadgeCheck size={18} />
-              <h3>MVP real</h3>
+              <h3>Camada tecnica</h3>
             </div>
             <p>
-              Chamados, mensagens, status e feedback sao persistidos no SQLite pelo backend Laravel.
+              O chat interpreta informacoes basicas, organiza documentos e gera protocolo real no SQLite.
             </p>
             <div className="side-tags">
-              <span>{activeTicket ? getStatusLabel(activeTicket.status) : 'Sem chamado ativo'}</span>
-              <span>{uploadedFiles.length} anexo(s) locais</span>
+              <span>{activeTicket ? getStatusLabel(activeTicket.status) : 'Atendimento aberto'}</span>
+              <span>{uploadedFiles.length} documento(s)</span>
             </div>
           </article>
 
           <article className="side-card">
             <div className="side-card-head">
               <Ticket size={18} />
-              <h3>Checklist da abertura</h3>
+              <h3>Checklist da triagem</h3>
             </div>
             <ul className="side-list">
-              <li>{intake.clientName ? 'Nome informado.' : 'Falta nome do solicitante.'}</li>
+              <li>{intake.clientName ? 'Nome do candidato informado.' : 'Falta nome do candidato.'}</li>
               <li>{intake.email ? 'E-mail informado.' : 'Falta e-mail para consulta publica.'}</li>
-              <li>{intake.subject && intake.objective ? 'Assunto e descricao preenchidos.' : 'Falta assunto ou descricao.'}</li>
+              <li>{intake.subject && intake.objective ? 'Relato inicial registrado.' : 'Falta assunto ou relato do caso.'}</li>
+              <li>{intake.dataConsent ? 'Consentimento registrado.' : 'Falta consentimento para tratamento dos dados.'}</li>
             </ul>
           </article>
 
           <article className="side-card">
             <div className="side-card-head">
               <Clock3 size={18} />
-              <h3>Retorno</h3>
+              <h3>Quando encaminhar</h3>
             </div>
-            <div className="slot-list">
-              <button className="slot-button">
-                <CalendarDays size={14} />
-                {activeTicket ? formatEstimatedReturn(activeTicket) : 'Estimado apos abertura'}
-              </button>
-            </div>
+            <ul className="side-list">
+              <li>Laudo, parecer ou documento assinado.</li>
+              <li>Eliminacao, cota, PCD, PPP, TAF ou avaliacao psicologica.</li>
+              <li>Prazo urgente, recurso negado ou possivel medida judicial.</li>
+            </ul>
           </article>
 
           <article className="side-card">
             <div className="side-card-head">
               <FileText size={18} />
-              <h3>Chamado ativo</h3>
+              <h3>Protocolo ativo</h3>
             </div>
             <div className="history-compact-list">
               {activeRecord ? (
@@ -1121,7 +1299,7 @@ export default function ChatbotPrototype() {
               <UserRound size={18} />
               <h3>Painel admin</h3>
             </div>
-            <p>Atendentes acessam a fila em /admin com o usuario local criado pelo seeder.</p>
+            <p>A equipe humana ve a fila, responde, muda status e encerra protocolos em /admin.</p>
             <button className="reset-button" onClick={() => { window.location.href = '/admin'; }}>
               Abrir admin
               <ChevronRight size={14} />

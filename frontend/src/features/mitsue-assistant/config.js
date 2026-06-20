@@ -8,431 +8,424 @@ import {
 } from 'lucide-react';
 
 export const AREA_CONFIG = {
-  periciaJudicial: {
-    label: 'Perícia judicial',
-    shortLabel: 'Perícia',
-    icon: Scale,
+  edital: {
+    label: 'Analise de edital',
+    shortLabel: 'Edital',
+    icon: FileText,
     description:
-      'Triagem de nomeações, honorários, quesitos, diligências e entrega de laudo técnico com comunicação formal.',
+      'Leitura orientada de edital, banca, cargo, requisitos, datas, etapas, cotas e criterios de eliminacao.',
     intro:
-      'Para perícia judicial, vou organizar processo, comarca, prazo, honorários e quesitos para deixar a análise pronta para a Mitsue Borges.',
-    expectedDocs: ['Processo judicial', 'Quesitos', 'Nomeação', 'Comprovante de honorários'],
-    quickChecks: ['Prazo do laudo', 'Depósito de honorários', 'Quesitos já apresentados'],
+      'Vou organizar concurso, banca, cargo, formacao, duvida central e nivel de detalhe para preparar uma leitura objetiva do edital.',
+    expectedDocs: ['Edital', 'Cronograma', 'Retificacao', 'Anexo do cargo'],
+    quickChecks: ['Cargo pretendido', 'Requisitos', 'Etapas e prazos'],
     fields: [
       {
-        name: 'processNumber',
-        label: 'Número do processo',
+        name: 'contestName',
+        label: 'Concurso',
         type: 'text',
-        placeholder: '0000000-00.0000.0.00.0000',
+        placeholder: 'Ex.: TRT, prefeitura, policia civil...',
       },
       {
-        name: 'court',
-        label: 'Vara / Comarca',
+        name: 'boardName',
+        label: 'Banca',
         type: 'text',
-        placeholder: '2ª Vara Cível de Campo Grande/MS',
+        placeholder: 'Ex.: Cebraspe, FGV, Vunesp, IBFC',
       },
       {
-        name: 'expertiseDeadline',
-        label: 'Prazo do laudo',
+        name: 'targetRole',
+        label: 'Cargo pretendido',
+        type: 'text',
+        placeholder: 'Cargo, area e especialidade',
+      },
+      {
+        name: 'candidateEducation',
+        label: 'Sua formacao',
+        type: 'text',
+        placeholder: 'Nivel medio, superior, curso especifico...',
+      },
+      {
+        name: 'editalGoal',
+        label: 'Objetivo da analise',
+        type: 'select',
+        options: [
+          { value: '', label: 'Selecione' },
+          { value: 'entender', label: 'Entender o edital' },
+          { value: 'concorrer', label: 'Verificar se posso concorrer' },
+          { value: 'cotas', label: 'Cotas, PCD, PPP ou heteroidentificacao' },
+          { value: 'eliminacao', label: 'Risco de eliminacao' },
+          { value: 'detalhada', label: 'Analise tecnica detalhada' },
+        ],
+      },
+      {
+        name: 'editalQuestion',
+        label: 'Duvida especifica',
+        type: 'textarea',
+        placeholder: 'Inscricao, requisitos, cotas, etapas, prova, eliminacao...',
+      },
+    ],
+    keywords: ['edital', 'banca', 'cargo', 'requisito', 'data', 'etapa', 'cota', 'pcd', 'ppp'],
+  },
+  planoEstudos: {
+    label: 'Plano de estudos',
+    shortLabel: 'Estudos',
+    icon: FolderKanban,
+    description:
+      'Cronograma, ciclo de estudos, metas semanais, revisoes, simulados e estrategia de prova.',
+    intro:
+      'Vou coletar prova, banca, tempo disponivel, nivel atual e materias fortes/fracas para montar uma estrategia realista.',
+    expectedDocs: ['Edital', 'Conteudo programatico', 'Historico de simulados'],
+    quickChecks: ['Horas por dia', 'Nivel atual', 'Materias fracas'],
+    fields: [
+      {
+        name: 'contestName',
+        label: 'Concurso e cargo',
+        type: 'text',
+        placeholder: 'Ex.: INSS - Tecnico',
+      },
+      {
+        name: 'boardName',
+        label: 'Banca',
+        type: 'text',
+        placeholder: 'Banca organizadora',
+      },
+      {
+        name: 'testDate',
+        label: 'Data da prova',
         type: 'date',
       },
       {
-        name: 'judgeOffice',
-        label: 'Juiz ou cartório',
+        name: 'dailyHours',
+        label: 'Tempo por dia',
         type: 'text',
-        placeholder: 'Gabinete ou cartório responsável',
+        placeholder: 'Ex.: 2h durante a semana e 5h no sabado',
       },
       {
-        name: 'expertiseObject',
-        label: 'Objeto da perícia',
+        name: 'currentLevel',
+        label: 'Nivel atual',
         type: 'select',
         options: [
           { value: '', label: 'Selecione' },
-          { value: 'contabil', label: 'Contábil' },
-          { value: 'documental', label: 'Documental' },
-          { value: 'administrativa', label: 'Administrativa' },
-          { value: 'engenharia', label: 'Engenharia' },
-          { value: 'outra', label: 'Outra natureza técnica' },
+          { value: 'iniciante', label: 'Iniciante' },
+          { value: 'intermediario', label: 'Intermediario' },
+          { value: 'avancado', label: 'Avancado' },
+          { value: 'reta_final', label: 'Reta final' },
         ],
       },
       {
-        name: 'feeDeposit',
-        label: 'Já houve depósito de honorários?',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'sim', label: 'Sim' },
-          { value: 'nao', label: 'Não' },
-          { value: 'parcial', label: 'Parcial / pendente' },
-        ],
-      },
-      {
-        name: 'partyQuestions',
-        label: 'Já existem quesitos das partes?',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'sim', label: 'Sim' },
-          { value: 'nao', label: 'Não' },
-          { value: 'parcial', label: 'Apenas de uma das partes' },
-        ],
+        name: 'studyDifficulties',
+        label: 'Dificuldades principais',
+        type: 'textarea',
+        placeholder: 'Teoria, questoes, discursiva, revisao, simulados...',
       },
     ],
-    keywords: ['perícia', 'pericia', 'laudo', 'quesitos', 'juiz', 'cartório', 'nomeação', 'nomeacao'],
+    keywords: ['plano', 'estudo', 'cronograma', 'revisao', 'simulado', 'materia', 'questoes'],
   },
-  assistenciaTecnica: {
-    label: 'Assistência técnica',
-    shortLabel: 'Assistência',
-    icon: ShieldCheck,
+  duvidasMateria: {
+    label: 'Duvidas de materias',
+    shortLabel: 'Duvidas',
+    icon: Landmark,
     description:
-      'Pré-atendimento para parecer, impugnação, acompanhamento técnico e suporte à estratégia processual.',
+      'Explicacao de conteudo, checklist de documentos, questoes simples e orientacao operacional.',
     intro:
-      'Na assistência técnica, preciso entender a fase do processo, a necessidade principal e o prazo para organizar um parecer ou impugnação com precisão.',
-    expectedDocs: ['Petição', 'Laudo', 'Quesitos', 'Documentos de apoio'],
-    quickChecks: ['Fase processual', 'Prazo para manifestação', 'Laudo anexado'],
+      'Posso resolver duvidas simples de materia, prova, documentos e regras operacionais sem prometer resultado.',
+    expectedDocs: ['Questao', 'Trecho do edital', 'Material de estudo'],
+    quickChecks: ['Materia', 'Tema', 'Nivel da duvida'],
     fields: [
       {
-        name: 'assistantProcessNumber',
-        label: 'Número do processo',
+        name: 'subjectMatter',
+        label: 'Materia',
         type: 'text',
-        placeholder: '0000000-00.0000.0.00.0000',
+        placeholder: 'Ex.: Portugues, Administrativo, RLM',
       },
       {
-        name: 'assistantPhase',
-        label: 'Fase atual',
+        name: 'questionTheme',
+        label: 'Tema',
+        type: 'text',
+        placeholder: 'Assunto ou topico da duvida',
+      },
+      {
+        name: 'doubtType',
+        label: 'Tipo de ajuda',
         type: 'select',
         options: [
           { value: '', label: 'Selecione' },
-          { value: 'inicial', label: 'Fase inicial' },
-          { value: 'producao_prova', label: 'Produção de prova' },
-          { value: 'laudo_apresentado', label: 'Laudo já apresentado' },
-          { value: 'manifestacao', label: 'Prazo para manifestação' },
+          { value: 'explicacao', label: 'Explicacao simples' },
+          { value: 'questao', label: 'Resolver questao' },
+          { value: 'checklist', label: 'Checklist de documentos' },
+          { value: 'estrategia', label: 'Estrategia de revisao' },
         ],
       },
       {
-        name: 'assistantNeed',
-        label: 'Necessidade principal',
+        name: 'currentDoubt',
+        label: 'Duvida',
+        type: 'textarea',
+        placeholder: 'Cole a questao ou explique onde travou.',
+      },
+    ],
+    keywords: ['duvida', 'materia', 'questao', 'conteudo', 'documento', 'checklist'],
+  },
+  recursoRevisao: {
+    label: 'Recurso ou revisao',
+    shortLabel: 'Recurso',
+    icon: ShieldCheck,
+    description:
+      'Triagem de recurso contra questao, nota, discursiva, TAF, prova oral, prova pratica ou eliminacao.',
+    intro:
+      'Vou coletar edital, prova, gabarito, alternativa, justificativa da banca, prazo e documentos para classificar a complexidade.',
+    expectedDocs: ['Edital', 'Caderno de prova', 'Gabarito', 'Espelho de correcao', 'Decisao da banca'],
+    quickChecks: ['Prazo do recurso', 'Questao ou fase', 'Fundamento tecnico'],
+    fields: [
+      {
+        name: 'contestName',
+        label: 'Concurso',
+        type: 'text',
+        placeholder: 'Nome do certame',
+      },
+      {
+        name: 'boardName',
+        label: 'Banca',
+        type: 'text',
+        placeholder: 'Banca responsavel',
+      },
+      {
+        name: 'examStage',
+        label: 'Fase contestada',
         type: 'select',
         options: [
           { value: '', label: 'Selecione' },
-          { value: 'parecer', label: 'Parecer técnico' },
-          { value: 'impugnacao', label: 'Impugnação técnica' },
-          { value: 'acompanhamento', label: 'Acompanhamento da perícia' },
-          { value: 'quesitos', label: 'Elaboração de quesitos' },
+          { value: 'objetiva', label: 'Questao objetiva' },
+          { value: 'discursiva', label: 'Prova discursiva' },
+          { value: 'pratica', label: 'Prova pratica' },
+          { value: 'taf', label: 'TAF' },
+          { value: 'psicologica', label: 'Avaliacao psicologica' },
+          { value: 'oral', label: 'Prova oral' },
+          { value: 'eliminacao', label: 'Eliminacao' },
         ],
       },
       {
-        name: 'assistantDeadline',
+        name: 'contestedItem',
+        label: 'Item contestado',
+        type: 'text',
+        placeholder: 'Numero da questao, nota, fase ou decisao',
+      },
+      {
+        name: 'appealDeadline',
+        label: 'Prazo do recurso',
+        type: 'date',
+      },
+      {
+        name: 'bankDecision',
+        label: 'Decisao ou gabarito da banca',
+        type: 'textarea',
+        placeholder: 'Alternativa da banca, nota, justificativa, indeferimento...',
+      },
+    ],
+    keywords: ['recurso', 'revisao', 'questao', 'gabarito', 'nota', 'discursiva', 'taf', 'eliminacao'],
+  },
+  laudoParecer: {
+    label: 'Laudo ou parecer',
+    shortLabel: 'Laudo',
+    icon: Scale,
+    description:
+      'Coleta estruturada para laudo, parecer tecnico-cientifico, nota tecnica ou relatorio preliminar.',
+    intro:
+      'Eu nao emito laudo sozinho. Vou organizar finalidade, documentos, prazo e perguntas tecnicas para a perita humana.',
+    expectedDocs: ['Edital', 'Prova', 'Espelho', 'Decisao', 'Processo', 'Parecer anterior'],
+    quickChecks: ['Finalidade', 'Uso do documento', 'Perguntas tecnicas'],
+    fields: [
+      {
+        name: 'documentPurpose',
+        label: 'Documento necessario',
+        type: 'select',
+        options: [
+          { value: '', label: 'Selecione' },
+          { value: 'laudo', label: 'Laudo tecnico' },
+          { value: 'parecer', label: 'Parecer tecnico-cientifico' },
+          { value: 'nota', label: 'Nota tecnica' },
+          { value: 'relatorio', label: 'Relatorio preliminar' },
+        ],
+      },
+      {
+        name: 'documentUse',
+        label: 'Finalidade',
+        type: 'select',
+        options: [
+          { value: '', label: 'Selecione' },
+          { value: 'administrativo', label: 'Recurso administrativo' },
+          { value: 'judicial', label: 'Processo judicial' },
+          { value: 'consulta', label: 'Consulta particular' },
+        ],
+      },
+      {
+        name: 'requestedBy',
+        label: 'Quem solicitou',
+        type: 'text',
+        placeholder: 'Candidato, advogado, juizo, familiar...',
+      },
+      {
+        name: 'technicalDeadline',
+        label: 'Prazo',
+        type: 'date',
+      },
+      {
+        name: 'controversy',
+        label: 'Fato controvertido',
+        type: 'textarea',
+        placeholder: 'Explique o que precisa ser analisado tecnicamente.',
+      },
+      {
+        name: 'technicalQuestions',
+        label: 'Perguntas a responder',
+        type: 'textarea',
+        placeholder: 'Liste os quesitos ou perguntas tecnicas.',
+      },
+    ],
+    keywords: ['laudo', 'parecer', 'nota tecnica', 'relatorio', 'perita', 'cientifico'],
+  },
+  acaoBanca: {
+    label: 'Acao contra banca',
+    shortLabel: 'Acao',
+    icon: Scale,
+    description:
+      'Triagem cautelosa para casos que podem exigir analise tecnica humana e avaliacao juridica.',
+    intro:
+      'Vou organizar o ocorrido sem afirmar direito liquido e certo, sem prometer resultado e sem substituir advogado.',
+    expectedDocs: ['Edital', 'Recurso administrativo', 'Indeferimento', 'Protocolos', 'Prints', 'Provas'],
+    quickChecks: ['Prejuizo concreto', 'Prazo aberto', 'Documentos comprobatarios'],
+    fields: [
+      {
+        name: 'contestName',
+        label: 'Concurso',
+        type: 'text',
+        placeholder: 'Nome do concurso',
+      },
+      {
+        name: 'boardName',
+        label: 'Banca',
+        type: 'text',
+        placeholder: 'Banca responsavel',
+      },
+      {
+        name: 'examStage',
+        label: 'Fase do concurso',
+        type: 'text',
+        placeholder: 'Inscricao, objetiva, discursiva, cota, PCD, TAF...',
+      },
+      {
+        name: 'bankDecision',
+        label: 'Decisao da banca',
+        type: 'textarea',
+        placeholder: 'O que a banca decidiu e quando?',
+      },
+      {
+        name: 'administrativeAppeal',
+        label: 'Ja houve recurso administrativo?',
+        type: 'select',
+        options: [
+          { value: '', label: 'Selecione' },
+          { value: 'sim_negado', label: 'Sim, foi negado' },
+          { value: 'sim_pendente', label: 'Sim, esta pendente' },
+          { value: 'nao', label: 'Nao' },
+        ],
+      },
+      {
+        name: 'legalDeadline',
         label: 'Prazo relevante',
         type: 'date',
       },
-      {
-        name: 'assistantCounterpart',
-        label: 'Parte ou assistido',
-        type: 'text',
-        placeholder: 'Autor, réu, empresa ou órgão assistido',
-      },
-      {
-        name: 'assistantGap',
-        label: 'Ponto crítico identificado',
-        type: 'textarea',
-        placeholder: 'Resuma inconsistências, dúvidas técnicas ou risco processual.',
-      },
     ],
-    keywords: ['assistência', 'assistencia', 'parecer', 'impugnação', 'impugnacao', 'assistente técnico'],
+    keywords: ['acao', 'judicial', 'liminar', 'banca', 'indeferimento', 'eliminacao', 'advogado'],
   },
-  licitacoes: {
-    label: 'Licitações e contratos',
-    shortLabel: 'Licitações',
-    icon: FileText,
-    description:
-      'Triagem para edital, recurso, impugnação, termo de referência, habilitação e análise de risco.',
-    intro:
-      'Para licitações, vou mapear edital, modalidade, órgão responsável e o problema encontrado para direcionar a medida adequada com rapidez.',
-    expectedDocs: ['Edital', 'Termo de referência', 'Planilha', 'Ata', 'Recurso anterior'],
-    quickChecks: ['Data da sessão', 'Exigência abusiva', 'Ação desejada'],
-    fields: [
-      {
-        name: 'modality',
-        label: 'Modalidade',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'pregao', label: 'Pregão' },
-          { value: 'concorrencia', label: 'Concorrência' },
-          { value: 'dispensa', label: 'Dispensa' },
-          { value: 'credenciamento', label: 'Credenciamento' },
-          { value: 'outra', label: 'Outra modalidade' },
-        ],
-      },
-      {
-        name: 'agency',
-        label: 'Órgão responsável',
-        type: 'text',
-        placeholder: 'Município, secretaria, autarquia ou empresa pública',
-      },
-      {
-        name: 'noticeNumber',
-        label: 'Número do edital',
-        type: 'text',
-        placeholder: 'PE 014/2026',
-      },
-      {
-        name: 'sessionDate',
-        label: 'Data da sessão',
-        type: 'date',
-      },
-      {
-        name: 'issueType',
-        label: 'Problema encontrado',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'exigencia_abusiva', label: 'Exigência abusiva' },
-          { value: 'habilitacao', label: 'Dúvida de habilitação' },
-          { value: 'planilha', label: 'Planilha ou composição de custos' },
-          { value: 'tr_deficiente', label: 'TR ou ETP mal estruturado' },
-          { value: 'desclassificacao', label: 'Risco de desclassificação' },
-        ],
-      },
-      {
-        name: 'desiredAction',
-        label: 'Ação desejada',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'impugnar', label: 'Impugnar edital' },
-          { value: 'recurso', label: 'Elaborar recurso' },
-          { value: 'riscos', label: 'Analisar riscos' },
-          { value: 'documentacao', label: 'Montar documentação' },
-        ],
-      },
-    ],
-    keywords: [
-      'licitação',
-      'licitacao',
-      'edital',
-      'pregão',
-      'pregao',
-      'recurso',
-      'impugnação',
-      'impugnacao',
-      'termo de referência',
-      'tr',
-    ],
-  },
-  gestaoPublica: {
-    label: 'Gestão pública',
-    shortLabel: 'Gestão',
-    icon: Landmark,
-    description:
-      'Atendimento prévio para fiscalização contratual, auditoria documental, conformidade e prestação de contas.',
-    intro:
-      'Na gestão pública, vou estruturar município, contrato, documento-base e objetivo da análise para agilizar pareceres e auditorias.',
-    expectedDocs: ['Contrato', 'Nota técnica', 'Prestação de contas', 'Relatório', 'Portaria'],
-    quickChecks: ['Município ou órgão', 'Documento-base', 'Escopo da análise'],
-    fields: [
-      {
-        name: 'municipality',
-        label: 'Município / órgão',
-        type: 'text',
-        placeholder: 'Prefeitura, câmara, secretaria ou órgão de controle',
-      },
-      {
-        name: 'department',
-        label: 'Unidade responsável',
-        type: 'text',
-        placeholder: 'Secretaria de Saúde, Educação, Infraestrutura...',
-      },
-      {
-        name: 'contractType',
-        label: 'Tipo de contrato ou projeto',
-        type: 'text',
-        placeholder: 'Obra, terceirização, ata de registro, convênio...',
-      },
-      {
-        name: 'analysisScope',
-        label: 'Tema da demanda',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'fiscalizacao', label: 'Fiscalização contratual' },
-          { value: 'parecer', label: 'Parecer técnico' },
-          { value: 'conformidade', label: 'Conformidade e auditoria' },
-          { value: 'prestacao', label: 'Prestação de contas' },
-          { value: 'documentos', label: 'Análise documental administrativa' },
-        ],
-      },
-      {
-        name: 'baseDocument',
-        label: 'Documento-base principal',
-        type: 'text',
-        placeholder: 'Contrato, edital, nota técnica ou relatório',
-      },
-      {
-        name: 'currentChallenge',
-        label: 'Questão central',
-        type: 'textarea',
-        placeholder: 'Explique o risco, inconsistência ou necessidade do órgão.',
-      },
-    ],
-    keywords: ['gestão pública', 'gestao publica', 'prestação de contas', 'auditoria', 'fiscalização', 'contrato administrativo'],
-  },
-  orcamento: {
-    label: 'Orçamento / contratação',
-    shortLabel: 'Orçamento',
-    icon: FolderKanban,
-    description:
-      'Levantamento inicial de escopo, urgência e volume documental para orçamento formal sem compromisso vinculante.',
-    intro:
-      'Posso coletar escopo, urgência e volume documental para preparar um orçamento inicial e encaminhar para proposta formal.',
-    expectedDocs: ['Escopo', 'Edital', 'Processo', 'Minuta', 'Relatório'],
-    quickChecks: ['Serviço desejado', 'Volume documental', 'Prazo pretendido'],
-    fields: [
-      {
-        name: 'serviceFocus',
-        label: 'Serviço desejado',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'laudo', label: 'Laudo pericial' },
-          { value: 'assistencia', label: 'Assistência técnica' },
-          { value: 'edital', label: 'Análise de edital' },
-          { value: 'recurso', label: 'Recurso ou impugnação' },
-          { value: 'auditoria', label: 'Auditoria documental' },
-        ],
-      },
-      {
-        name: 'budgetDeadline',
-        label: 'Prazo pretendido',
-        type: 'date',
-      },
-      {
-        name: 'documentVolume',
-        label: 'Volume documental',
-        type: 'select',
-        options: [
-          { value: '', label: 'Selecione' },
-          { value: 'baixo', label: 'Baixo até 50 páginas' },
-          { value: 'medio', label: 'Médio até 200 páginas' },
-          { value: 'alto', label: 'Alto acima de 200 páginas' },
-        ],
-      },
-      {
-        name: 'budgetNeed',
-        label: 'Objetivo principal',
-        type: 'textarea',
-        placeholder: 'Conte o que precisa, prazo e contexto da contratação.',
-      },
-    ],
-    keywords: ['orçamento', 'orcamento', 'valor', 'proposta', 'contratação', 'contratacao'],
-  },
-  falarComMitsue: {
-    label: 'Falar diretamente com a Mitsue',
-    shortLabel: 'Contato direto',
+  peritaHumana: {
+    label: 'Encaminhar a perita',
+    shortLabel: 'Perita',
     icon: PhoneCall,
     description:
-      'Encaminhamento de atendimento prioritário, reunião ou alinhamento direto com a profissional.',
+      'Preparacao do pacote interno para analise da especialista humana responsavel.',
     intro:
-      'Vou preparar um registro objetivo para contato direto com a Mitsue, incluindo motivo, urgência e melhor janela de retorno.',
-    expectedDocs: ['Mensagem-resumo', 'Documentos essenciais'],
-    quickChecks: ['Motivo do contato', 'Melhor horário', 'Contexto da urgência'],
+      'Vou montar o resumo do caso, linha do tempo, documentos, urgencia e proxima acao sugerida para a perita humana.',
+    expectedDocs: ['Edital', 'Prova', 'Decisao', 'Protocolo', 'Documentos pessoais quando indispensaveis'],
+    quickChecks: ['Tipo de demanda', 'Urgencia', 'Documentos faltantes'],
     fields: [
       {
-        name: 'contactReason',
-        label: 'Motivo do contato',
+        name: 'demandType',
+        label: 'Tipo de demanda',
         type: 'select',
         options: [
           { value: '', label: 'Selecione' },
-          { value: 'urgencia', label: 'Urgência processual / administrativa' },
-          { value: 'reuniao', label: 'Solicitar reunião' },
-          { value: 'contratacao', label: 'Alinhar contratação' },
-          { value: 'caso_especifico', label: 'Caso específico ou recorrente' },
+          { value: 'edital', label: 'Edital' },
+          { value: 'recurso', label: 'Recurso' },
+          { value: 'eliminacao', label: 'Eliminacao' },
+          { value: 'laudo', label: 'Laudo ou parecer' },
+          { value: 'judicial', label: 'Medida administrativa/judicial' },
         ],
       },
       {
-        name: 'bestMoment',
-        label: 'Melhor horário',
-        type: 'text',
-        placeholder: 'Ex.: hoje após 15h, amanhã cedo, horário comercial',
+        name: 'timeline',
+        label: 'Linha do tempo',
+        type: 'textarea',
+        placeholder: 'Datas, decisao da banca, recurso, resposta e prazo atual.',
       },
       {
-        name: 'priorityContext',
-        label: 'Contexto do atendimento',
+        name: 'candidateGoal',
+        label: 'Objetivo do candidato',
         type: 'textarea',
-        placeholder: 'Informe o motivo do contato direto e eventual prazo crítico.',
+        placeholder: 'O que voce precisa que seja analisado ou preparado?',
+      },
+      {
+        name: 'missingDocs',
+        label: 'Documentos que ainda faltam',
+        type: 'textarea',
+        placeholder: 'Liste o que ja tem e o que ainda nao conseguiu anexar.',
       },
     ],
-    keywords: ['mitsue', 'falar com a mitsue', 'contato direto', 'atendimento humano'],
+    keywords: ['perita', 'especialista', 'analise humana', 'encaminhar', 'reuniao'],
   },
 };
 
 export const FAQS = [
   {
-    question: 'O que é perícia judicial?',
+    question: 'O chat substitui advogado ou perita?',
     answer:
-      'Perícia judicial é a prova técnica produzida por especialista nomeado no processo para esclarecer fatos que dependem de conhecimento específico. O atendimento automatizado organiza dados e documentos, mas a conclusão técnica depende da análise profissional da Mitsue Borges.',
-    keywords: ['o que é perícia judicial', 'perícia judicial', 'pericia judicial'],
+      'Nao. O assistente organiza informacoes, explica regras e prepara triagens. Casos com laudo, parecer, processo judicial ou documento assinado exigem analise humana.',
+    keywords: ['substitui advogado', 'substitui perita', 'laudo sozinho'],
   },
   {
-    question: 'Qual a diferença entre perito e assistente técnico?',
+    question: 'Posso contestar uma questao?',
     answer:
-      'O perito atua por nomeação do juízo e responde com imparcialidade aos pontos técnicos do processo. O assistente técnico acompanha a perícia em favor de uma das partes, formula quesitos, analisa o laudo e aponta inconsistências.',
-    keywords: ['diferença entre perito e assistente', 'assistente técnico', 'perito'],
+      'Depende do edital, prazo, gabarito, bibliografia e fundamento tecnico. O chat pode organizar a minuta, mas nao promete anulacao nem resultado.',
+    keywords: ['contestar questao', 'anular questao', 'recurso'],
   },
   {
-    question: 'O que é impugnação de edital?',
+    question: 'O que preciso para analisar edital?',
     answer:
-      'É a medida administrativa usada para contestar cláusulas ilegais, restritivas ou desproporcionais do edital antes da sessão pública. Normalmente exige análise rápida do instrumento convocatório e atenção rigorosa ao prazo previsto.',
-    keywords: ['impugnação de edital', 'impugnacao de edital', 'contestar edital'],
-  },
-  {
-    question: 'O que é recurso administrativo?',
-    answer:
-      'Recurso administrativo é a manifestação formal apresentada contra uma decisão do procedimento licitatório ou administrativo, como inabilitação, desclassificação ou julgamento. A estratégia depende do ato recorrido e do prazo disponível.',
-    keywords: ['recurso administrativo', 'recurso', 'inabilitação', 'desclassificação'],
-  },
-  {
-    question: 'Quais documentos preciso para habilitação?',
-    answer:
-      'Os documentos variam conforme o edital, mas em regra incluem habilitação jurídica, regularidade fiscal, qualificação técnica e econômico-financeira. O ideal é cruzar a lista exigida com a situação atual da empresa para evitar ausência ou vencimento documental.',
-    keywords: ['documentos para habilitação', 'habilitação', 'habilitacao'],
-  },
-  {
-    question: 'Como funciona a contratação de perícia?',
-    answer:
-      'A contratação depende do tipo de demanda. Em nomeações judiciais, há observância ao processo e aos honorários. Em atendimentos privados, a contratação passa por triagem inicial, análise de escopo, orçamento formal e confirmação do cronograma.',
-    keywords: ['contratação de perícia', 'contratacao de pericia', 'honorários periciais'],
+      'Informe concurso, banca, cargo, formacao, objetivo da analise e duvida especifica. Se houver edital ou retificacao, anexe o arquivo.',
+    keywords: ['analisar edital', 'entender edital', 'requisito do cargo'],
   },
 ];
 
 export const BUDGET_HINTS = {
-  periciaJudicial:
-    'Laudo pericial a partir de R$ 3.500, sujeito à complexidade, diligências e volume documental.',
-  assistenciaTecnica:
-    'Assistência técnica e pareceres a partir de R$ 1.800, variando conforme prazo e profundidade.',
-  licitacoes:
-    'Análise preliminar de edital a partir de R$ 900. Recursos e impugnações variam conforme urgência.',
-  gestaoPublica:
-    'Parecer de conformidade, auditoria e fiscalização a partir de R$ 1.200, conforme escopo e documentação.',
-  orcamento:
-    'Orçamento inicial sem vínculo contratual. A proposta formal depende do escopo, prazo e material recebido.',
-  falarComMitsue:
-    'Encaminhamento direto sem custo inicial. Havendo contratação, a proposta é formalizada após triagem.',
+  edital: 'Analise inicial do edital pode ser feita pelo chat; revisao tecnica detalhada pode exigir atendimento humano.',
+  planoEstudos: 'Plano de estudos basico e gratuito no MVP; acompanhamento individual pode virar atendimento especializado.',
+  duvidasMateria: 'Duvidas simples podem ser resolvidas no fluxo; casos tecnicos sensiveis devem ser revisados por humano.',
+  recursoRevisao: 'Recursos simples podem receber minuta inicial; discursiva, eliminacao e prova tecnica exigem revisao humana.',
+  laudoParecer: 'Laudo e parecer dependem de especialista humana, documentos e finalidade de uso.',
+  acaoBanca: 'Casos judiciais exigem avaliacao juridica; o chat apenas organiza a triagem tecnica.',
+  peritaHumana: 'Encaminhamento humano usa o resumo, documentos, prazo e objetivo coletados no protocolo.',
 };
 
 export const BASE_FIELDS = [
   {
     name: 'clientName',
-    label: 'Nome do solicitante',
+    label: 'Nome do candidato',
     type: 'text',
     placeholder: 'Nome completo',
   },
   {
     name: 'organization',
-    label: 'Empresa / órgão / escritório',
+    label: 'Concurso ou orgao',
     type: 'text',
-    placeholder: 'Opcional, quando houver',
+    placeholder: 'Opcional',
   },
   {
     name: 'email',
@@ -448,7 +441,7 @@ export const BASE_FIELDS = [
   },
   {
     name: 'priorityMode',
-    label: 'Prioridade do atendimento',
+    label: 'Prioridade',
     type: 'select',
     options: [
       { value: 'auto', label: 'Detectar automaticamente' },
@@ -458,32 +451,15 @@ export const BASE_FIELDS = [
   },
   {
     name: 'objective',
-    label: 'Objetivo ou resumo do caso',
+    label: 'Relato inicial',
     type: 'textarea',
-    placeholder: 'Explique brevemente a demanda, o contexto e o que precisa.',
+    placeholder: 'Conte o que aconteceu e o que voce precisa.',
   },
   {
     name: 'urgencyNote',
-    label: 'Sinais de urgência ou prazo',
+    label: 'Prazo ou urgencia',
     type: 'textarea',
-    placeholder: 'Ex.: prazo hoje, sessão amanhã, intimação, entrega de laudo.',
-  },
-  {
-    name: 'meetingType',
-    label: 'Agendamento desejado',
-    type: 'select',
-    options: [
-      { value: 'nao', label: 'Não preciso agendar agora' },
-      { value: 'online', label: 'Reunião online' },
-      { value: 'presencial', label: 'Reunião presencial' },
-      { value: 'ligacao', label: 'Chamada rápida' },
-    ],
-  },
-  {
-    name: 'preferredWindow',
-    label: 'Melhor horário para retorno',
-    type: 'text',
-    placeholder: 'Ex.: hoje 16h às 18h, amanhã pela manhã',
+    placeholder: 'Ex.: recurso vence hoje, prova amanha, prazo judicial aberto.',
   },
 ];
 
@@ -495,8 +471,7 @@ export const EMPTY_INTAKE = {
   priorityMode: 'auto',
   objective: '',
   urgencyNote: '',
-  meetingType: 'nao',
-  preferredWindow: '',
+  dataConsent: false,
 };
 
 export const INITIAL_MESSAGES = [
@@ -504,25 +479,17 @@ export const INITIAL_MESSAGES = [
     id: 'welcome-1',
     role: 'assistant',
     type: 'text',
-    title: 'Assistente virtual da Mitsue Borges',
+    title: 'Assistente tecnico 24/7',
     text:
-      'Atendimento profissional 24/7 para pré-triagem de perícia judicial, assistência técnica, licitações, contratos administrativos e gestão pública.',
+      'Primeira camada de triagem para concursos publicos: edital, estudos, duvidas, recursos, revisoes e preparacao de casos para perita humana.',
   },
   {
     id: 'welcome-2',
     role: 'assistant',
     type: 'text',
-    title: 'Como este atendimento funciona',
+    title: 'Limites de seguranca',
     text:
-      'Eu organizo sua demanda, identifico prioridade, recebo documentos, preparo protocolo e deixo o pré-atendimento estruturado para análise da Mitsue. Este canal não substitui orientação jurídica.',
-  },
-  {
-    id: 'welcome-3',
-    role: 'assistant',
-    type: 'text',
-    title: 'Escolha a frente de atendimento',
-    text:
-      'Você pode iniciar por perícia judicial, assistência técnica, licitações, gestão pública, orçamento ou contato direto. Se preferir, descreva a situação em linguagem natural.',
+      'Nao substituo advogado, nao assino laudo, nao prometo aprovacao, anulacao de questao ou vitoria judicial. Casos sensiveis seguem para analise humana.',
   },
 ];
 
@@ -533,39 +500,34 @@ export const WORKSPACE_TABS = [
 ];
 
 export const HERO_BADGES = [
-  'Atendimento profissional 24/7',
-  'Protocolos automáticos',
-  'Triagem formal e navegável',
+  'Concursos publicos',
+  'Triagem tecnica 24/7',
+  'Perita humana como autoridade final',
 ];
 
 export const TRUST_ITEMS = [
   {
-    title: 'Atuação integrada',
-    text: 'Perícia judicial, assistência técnica, licitações, contratos administrativos e auditoria documental em um único fluxo.',
+    title: 'Resolve o basico',
+    text: 'Interpreta edital, orienta estudo, explica prazos, etapas e documentos sem prometer resultado.',
   },
   {
-    title: 'Pré-atendimento realista',
-    text: 'O bot filtra demandas, detecta urgência, organiza documentos e entrega contexto para resposta rápida e formal.',
+    title: 'Organiza o complexo',
+    text: 'Coleta prova, gabarito, espelho, decisao da banca, prazo e fundamento tecnico para revisao humana.',
   },
   {
-    title: 'Base pronta para expansão',
-    text: 'Estrutura preparada para futuras integrações com API, IA, agenda, banco de dados e sistemas de suporte reais.',
+    title: 'Encaminha com responsabilidade',
+    text: 'Laudo, parecer, eliminacao controversa, cotas, PCD, TAF e acao contra banca seguem para especialista.',
   },
 ];
 
 export const MOBILE_SHORTCUTS = [
-  { label: 'Perícia judicial', type: 'area', areaKey: 'periciaJudicial' },
-  { label: 'Licitações', type: 'area', areaKey: 'licitacoes' },
-  { label: 'Orçamento formal', type: 'area', areaKey: 'orcamento' },
-  { label: 'Falar com a Mitsue', type: 'area', areaKey: 'falarComMitsue' },
+  { label: 'Analisar edital', type: 'area', areaKey: 'edital' },
+  { label: 'Plano de estudos', type: 'area', areaKey: 'planoEstudos' },
+  { label: 'Recurso contra questao', type: 'area', areaKey: 'recursoRevisao' },
+  { label: 'Laudo ou parecer', type: 'area', areaKey: 'laudoParecer' },
   {
     label: 'Prazo hoje',
     type: 'message',
-    message: 'Preciso de atendimento urgente porque o prazo é hoje e preciso organizar a demanda.',
-  },
-  {
-    label: 'Sessão amanhã',
-    type: 'message',
-    message: 'Tenho uma sessão amanhã e preciso de análise rápida do edital.',
+    message: 'Tenho prazo vencendo hoje e preciso organizar um recurso ou analise tecnica.',
   },
 ];

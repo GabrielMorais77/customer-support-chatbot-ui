@@ -48,6 +48,11 @@ class Ticket extends Model
         return $this->hasMany(TicketMessage::class)->oldest();
     }
 
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TicketAttachment::class)->oldest();
+    }
+
     public function feedback(): HasOne
     {
         return $this->hasOne(TicketFeedback::class);

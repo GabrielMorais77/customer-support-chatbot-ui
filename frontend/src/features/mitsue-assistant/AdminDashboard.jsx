@@ -1,5 +1,7 @@
 import {
   ArrowLeft,
+  Download,
+  FileText,
   LogOut,
   RefreshCw,
   Search,
@@ -9,6 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import '../../chatbot_highfi_interactive.css';
 import {
+  adminDownloadAttachment,
   adminGetTicket,
   adminListTickets,
   adminLogin,
@@ -42,6 +45,20 @@ function formatDateTime(value) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value));
+}
+
+function formatBytes(value) {
+  const size = Number(value);
+
+  if (!Number.isFinite(size) || size <= 0) {
+    return '0 KB';
+  }
+
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export default function AdminDashboard() {
@@ -187,6 +204,16 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleDownloadAttachment(attachment) {
+    setError('');
+
+    try {
+      await adminDownloadAttachment(attachment);
+    } catch (caughtError) {
+      setError(caughtError.message);
+    }
+  }
+
   function renderMessages() {
     return (
       <>
@@ -318,6 +345,7 @@ export default function AdminDashboard() {
                 <span>{ticket.subject}</span>
                 <small>
                   {ticket.name} - {formatDateTime(ticket.created_at)}
+                  {ticket.attachments_count ? ` - ${ticket.attachments_count} anexo(s)` : ''}
                 </small>
               </button>
             ))}
@@ -355,7 +383,32 @@ export default function AdminDashboard() {
                   <span>Status</span>
                   <strong>{statusLabel(selectedTicket.status)}</strong>
                 </div>
+                <div>
+                  <span>Anexos</span>
+                  <strong>{selectedTicket.attachments?.length || 0}</strong>
+                </div>
               </div>
+
+              {selectedTicket.attachments?.length ? (
+                <div className="details-card">
+                  <strong>Documentos para analise</strong>
+                  <div className="attachment-list">
+                    {selectedTicket.attachments.map((attachment) => (
+                      <button
+                        key={attachment.id}
+                        type="button"
+                        className="attachment-chip attachment-chip-button"
+                        onClick={() => handleDownloadAttachment(attachment)}
+                      >
+                        <FileText size={14} />
+                        <span>{attachment.original_name}</span>
+                        <small>{formatBytes(attachment.size)}</small>
+                        <Download size={14} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <div className="admin-status-row">
                 <label>

@@ -469,6 +469,40 @@
   gap: 10px;
 }
 
+.assistant-menu {
+  display: grid;
+  gap: 8px;
+}
+
+.assistant-menu-button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 58px;
+  padding: 11px 12px;
+  text-align: left;
+  border: 1px solid rgba(106, 111, 156, 0.14);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.assistant-menu-button strong {
+  color: var(--flow-primary-strong);
+  font-size: 0.82rem;
+}
+
+.assistant-menu-button span {
+  color: var(--flow-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.assistant-menu-button.is-active,
+.assistant-menu-button:hover {
+  border-color: rgba(181, 148, 95, 0.34);
+  background: var(--flow-accent-wash);
+}
+
 .message-shell {
   max-width: 86%;
   padding: 12px 14px;
@@ -512,6 +546,42 @@
   margin-top: 8px;
   font-size: 0.68rem;
   color: #8d91aa;
+}
+
+.typing-bubble {
+  display: inline-flex;
+  gap: 5px;
+  width: fit-content;
+  min-width: 58px;
+}
+
+.typing-bubble span {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--flow-accent);
+  animation: typingPulse 900ms ease-in-out infinite;
+}
+
+.typing-bubble span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.typing-bubble span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes typingPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
 }
 
 .protocol-card {
@@ -711,8 +781,75 @@
   grid-column: 1 / -1;
 }
 
+.consent-card {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(181, 148, 95, 0.24);
+  border-radius: 14px;
+  background: var(--flow-accent-wash);
+  color: var(--flow-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.consent-card input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1px solid rgba(47, 91, 99, 0.34);
+  border-radius: 5px;
+  background: #ffffff;
+  appearance: auto;
+}
+
 .triage-meta {
   margin: 10px 0 0;
+}
+
+.attachment-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.attachment-chip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--flow-surface-alt);
+  color: var(--flow-primary);
+  font-size: 0.74rem;
+}
+
+.attachment-chip-button {
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  width: 100%;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.attachment-chip-button:hover {
+  background: var(--flow-accent-wash);
+}
+
+.attachment-chip span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-chip small {
+  color: var(--flow-muted);
 }
 
 .triage-meta span,

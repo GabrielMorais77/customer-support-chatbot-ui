@@ -20,6 +20,7 @@ class TicketController extends Controller
 
         $query = Ticket::query()
             ->withCount('messages')
+            ->withCount('attachments')
             ->latest();
 
         if (! empty($data['status'])) {
@@ -54,7 +55,7 @@ class TicketController extends Controller
 
     public function show(Ticket $ticket): JsonResponse
     {
-        $ticket->load(['messages', 'feedback']);
+        $ticket->load(['messages', 'feedback', 'attachments']);
 
         return response()->json([
             'success' => true,
@@ -133,6 +134,7 @@ class TicketController extends Controller
             'created_at' => $ticket->created_at?->toISOString(),
             'updated_at' => $ticket->updated_at?->toISOString(),
             'messages_count' => $ticket->messages_count ?? $ticket->messages()->count(),
+            'attachments_count' => $ticket->attachments_count ?? $ticket->attachments()->count(),
         ];
     }
 
@@ -142,6 +144,7 @@ class TicketController extends Controller
             ...$this->serializeTicketSummary($ticket),
             'description' => $ticket->description,
             'messages' => $ticket->messages->map(fn ($message): array => $this->serializeMessage($message))->values(),
+            'attachments' => $ticket->attachments->map(fn ($attachment): array => $this->serializeAttachment($attachment))->values(),
             'feedback' => $ticket->feedback ? [
                 'rating' => $ticket->feedback->rating,
                 'stars' => $ticket->feedback->stars,
@@ -159,6 +162,18 @@ class TicketController extends Controller
             'sender_name' => $message->sender_name,
             'message' => $message->message,
             'created_at' => $message->created_at?->toISOString(),
+        ];
+    }
+
+    private function serializeAttachment($attachment): array
+    {
+        return [
+            'id' => $attachment->id,
+            'uploaded_by' => $attachment->uploaded_by,
+            'original_name' => $attachment->original_name,
+            'mime_type' => $attachment->mime_type,
+            'size' => $attachment->size,
+            'created_at' => $attachment->created_at?->toISOString(),
         ];
     }
 }

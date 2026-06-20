@@ -27,9 +27,10 @@ function setAdminToken(token) {
 }
 
 async function request(path, options = {}) {
+  const isFormData = options.body instanceof FormData;
   const headers = {
     Accept: 'application/json',
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {}),
   };
 
@@ -60,7 +61,37 @@ export function hasAdminSession() {
   return Boolean(getAdminToken());
 }
 
-export async function createTicket(data) {
+export async function askAssistant(message, area, history = []) {
+  return request('/assistant/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, area, history }),
+  });
+}
+
+function buildTicketFormData(data, files = []) {
+  const formData = new FormData();
+
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      formData.append(key, value);
+    }
+  });
+
+  files.forEach((file) => {
+    formData.append('attachments[]', file);
+  });
+
+  return formData;
+}
+
+export async function createTicket(data, files = []) {
+  if (files.length) {
+    return request('/tickets', {
+      method: 'POST',
+      body: buildTicketFormData(data, files),
+    });
+  }
+
   return request('/tickets', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -76,6 +107,19 @@ export async function sendTicketMessage(protocol, email, message) {
   return request(`/tickets/${encodeURIComponent(protocol)}/messages`, {
     method: 'POST',
     body: JSON.stringify({ email, message }),
+  });
+}
+
+export async function uploadTicketAttachments(protocol, email, files = []) {
+  const formData = new FormData();
+  formData.append('email', email);
+  files.forEach((file) => {
+    formData.append('attachments[]', file);
+  });
+
+  return request(`/tickets/${encodeURIComponent(protocol)}/attachments`, {
+    method: 'POST',
+    body: formData,
   });
 }
 
@@ -142,4 +186,24 @@ export async function adminUpdateStatus(id, status) {
     headers: adminHeaders(),
     body: JSON.stringify({ status }),
   });
+}
+
+export async function adminDownloadAttachment(attachment) {
+  const response = await fetch(`${API_URL}/admin/attachments/${attachment.id}/download`, {
+    headers: adminHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Nao foi possivel baixar o anexo.');
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = attachment.original_name || 'anexo';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 }
