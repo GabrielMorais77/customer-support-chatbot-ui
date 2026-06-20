@@ -94,6 +94,51 @@ const STATUS_LABELS = {
   closed: 'Encerrado',
 };
 
+const SENSITIVE_AREA_KEYS = new Set(['recursoRevisao', 'laudoParecer', 'acaoBanca', 'peritaHumana']);
+
+const COMMON_PROTOCOL_FIELDS = [
+  {
+    name: 'contestName',
+    label: 'Concurso',
+    type: 'text',
+    placeholder: 'Nome do concurso ou orgao',
+  },
+  {
+    name: 'boardName',
+    label: 'Banca',
+    type: 'text',
+    placeholder: 'Ex.: FGV, Cebraspe, Vunesp...',
+  },
+  {
+    name: 'targetRole',
+    label: 'Cargo',
+    type: 'text',
+    placeholder: 'Cargo, area ou especialidade',
+  },
+  {
+    name: 'examStage',
+    label: 'Etapa',
+    type: 'text',
+    placeholder: 'Inscricao, objetiva, discursiva, TAF, pericia...',
+  },
+];
+
+function createInitialMessages() {
+  const createdAt = new Date().toISOString();
+
+  return [
+    {
+      id: 'initial-ai-welcome',
+      role: 'assistant',
+      type: 'text',
+      title: 'IA 24/7 para concursos publicos',
+      text:
+        'Ola! Sou o assistente tecnico 24/7 para concursos publicos.\n\nPosso ajudar com edital, banca, cargo, etapas, cotas, PCD, heteroidentificacao, pericia medica, TAF, recursos, revisoes, plano de estudos e organizacao do seu caso.\n\nResolvo duvidas simples aqui no chat. Se houver laudo, parecer, eliminacao, recurso com prazo, documento sensivel ou necessidade de analise profissional, eu organizo os dados e abro um protocolo para uma perita humana avaliar.\n\nPara comecar, escolha uma opcao abaixo ou me diga brevemente o que voce precisa.',
+      createdAt,
+    },
+  ];
+}
+
 function getInitialDraftState() {
   const lastLookup = loadLastLookup();
 
@@ -102,7 +147,7 @@ function getInitialDraftState() {
     selectedArea: DEFAULT_AREA,
     intake: PUBLIC_EMPTY_INTAKE,
     uploadedFiles: [],
-    messages: [],
+    messages: createInitialMessages(),
     lookupForm: { protocol: '', email: '', ...lastLookup },
     ratingForm: { stars: 5, rating: 5, comment: '' },
     commentDraft: '',
@@ -186,26 +231,46 @@ function normalizeText(value = '') {
     .toLowerCase();
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function containsNormalizedTerm(text, term) {
+  if (term.includes(' ')) {
+    return text.includes(term);
+  }
+
+  return new RegExp(`(^|[^a-z0-9])${escapeRegExp(term)}([^a-z0-9]|$)`).test(text);
+}
+
+function containsAnyNormalizedTerm(text, terms) {
+  return terms.some((term) => containsNormalizedTerm(text, term));
+}
+
 function buildQuickGuidance(text, selectedArea) {
   const normalized = normalizeText(text);
 
-  if (normalized.includes('laudo') || normalized.includes('parecer')) {
+  if (containsAnyNormalizedTerm(normalized, ['classificacao', 'classificado', 'convocacao', 'convocado'])) {
+    return 'Classificacao significa que o candidato ficou ordenado no resultado do concurso. Convocacao e o chamado oficial para proxima etapa, documentos, posse ou nomeacao. Estar classificado nao garante convocacao: depende das vagas, cadastro reserva, validade do concurso e atos oficiais do orgao.';
+  }
+
+  if (containsAnyNormalizedTerm(normalized, ['laudo', 'parecer'])) {
     return 'Laudo, parecer tecnico-cientifico e documento assinado precisam de perita humana. Posso coletar finalidade, prazo, documentos, fato controvertido e perguntas tecnicas para encaminhar o caso organizado.';
   }
 
-  if (normalized.includes('acao') || normalized.includes('liminar') || normalized.includes('judicial')) {
+  if (containsAnyNormalizedTerm(normalized, ['acao', 'liminar', 'judicial'])) {
     return 'Esse tema pode exigir avaliacao juridica. Vou organizar fatos, banca, fase, decisao, prazo, recurso administrativo, documentos e prejuizo concreto, sem afirmar direito liquido e certo.';
   }
 
-  if (normalized.includes('recurso') || normalized.includes('gabarito') || normalized.includes('questao')) {
+  if (containsAnyNormalizedTerm(normalized, ['recurso', 'gabarito', 'questao'])) {
     return 'Para recurso, separe edital, caderno de prova, questao, gabarito, alternativa marcada, fundamento tecnico, bibliografia e prazo. Casos simples podem virar minuta; discursiva, eliminacao e prova pratica pedem revisao humana.';
   }
 
-  if (normalized.includes('estudo') || normalized.includes('cronograma') || selectedArea === 'planoEstudos') {
+  if (containsAnyNormalizedTerm(normalized, ['estudo', 'cronograma']) || selectedArea === 'planoEstudos') {
     return 'Para plano de estudos, informe concurso, banca, data da prova, horas por dia, nivel atual e materias fracas. A base e ciclo semanal, revisoes programadas, questoes e simulados.';
   }
 
-  if (normalized.includes('edital') || normalized.includes('cargo') || selectedArea === 'edital') {
+  if (containsAnyNormalizedTerm(normalized, ['edital', 'cargo']) || selectedArea === 'edital') {
     return 'Para edital, confira cargo, requisitos, datas, etapas, conteudo programatico, criterios de aprovacao e eliminacao. Se anexar o edital, o protocolo fica melhor preparado para analise.';
   }
 
@@ -276,13 +341,28 @@ export default function ChatbotPrototype() {
   const [notice, setNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAssistantTyping, setIsAssistantTyping] = useState(false);
+  const [isCollectingTicket, setIsCollectingTicket] = useState(false);
 
   const selectedConfig = AREA_CONFIG[selectedArea];
   const activeRecord = ticketToRecord(activeTicket);
-  const compactFields = [intake.clientName, intake.email || intake.phone, intake.subject, intake.objective]
+  const compactFields = [
+    intake.clientName,
+    intake.email,
+    intake.phone,
+    intake.subject,
+    intake.objective,
+    intake.contestName,
+    intake.boardName,
+    intake.targetRole,
+    intake.examStage,
+  ]
     .filter(Boolean)
     .length;
   const compactAreaFields = useMemo(() => selectedConfig.fields, [selectedConfig]);
+  const commonProtocolFields = useMemo(() => {
+    const areaFieldNames = new Set(compactAreaFields.map((field) => field.name));
+    return COMMON_PROTOCOL_FIELDS.filter((field) => !areaFieldNames.has(field.name));
+  }, [compactAreaFields]);
 
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -331,12 +411,68 @@ export default function ChatbotPrototype() {
     }));
   }
 
+  function shouldCollectProtocol(text, areaKey = selectedArea) {
+    const normalized = normalizeText(text);
+
+    if (SENSITIVE_AREA_KEYS.has(areaKey)) {
+      return true;
+    }
+
+    return containsAnyNormalizedTerm(normalized, [
+      'recurso',
+      'revisao',
+      'gabarito',
+      'nota',
+      'discursiva',
+      'espelho',
+      'eliminacao',
+      'indeferimento',
+      'laudo',
+      'parecer',
+      'nota tecnica',
+      'acao',
+      'judicial',
+      'liminar',
+      'pcd',
+      'heteroidentificacao',
+      'pericia',
+      'taf',
+      'cota',
+      'prazo',
+      'urgente',
+    ]);
+  }
+
+  function applyTriageDecision(userText, triage = {}) {
+    const suggestedAreaKey = AREA_CONFIG[triage.suggested_area_key] ? triage.suggested_area_key : selectedArea;
+    const nextConfig = AREA_CONFIG[suggestedAreaKey] || selectedConfig;
+    const requiresTicket = Boolean(triage.requires_ticket) || shouldCollectProtocol(userText, suggestedAreaKey);
+
+    if (suggestedAreaKey !== selectedArea) {
+      setSelectedArea(suggestedAreaKey);
+    }
+
+    if (!requiresTicket) {
+      return;
+    }
+
+    setIsCollectingTicket(true);
+    setIntake((current) => ({
+      ...current,
+      subject: current.subject || nextConfig.label,
+      objective: current.objective || userText,
+    }));
+  }
+
   function handleAreaSelection(areaKey) {
+    const requiresTicket = SENSITIVE_AREA_KEYS.has(areaKey);
+
     setSelectedArea(areaKey);
     setIntake((current) => ({
       ...current,
       subject: current.subject || AREA_CONFIG[areaKey].label,
     }));
+    setIsCollectingTicket((current) => current || requiresTicket);
     appendMessage({
       role: 'user',
       type: 'text',
@@ -346,7 +482,9 @@ export default function ChatbotPrototype() {
       role: 'assistant',
       type: 'text',
       title: 'Area selecionada',
-      text: AREA_CONFIG[areaKey].intro,
+      text: requiresTicket
+        ? `${AREA_CONFIG[areaKey].intro}\n\nEsse tipo de demanda pode exigir analise tecnica humana. Vou coletar os dados minimos e, depois da sua confirmacao, abrir um protocolo.`
+        : `${AREA_CONFIG[areaKey].intro}\n\nVamos primeiro conversar por aqui. Se eu identificar risco tecnico, prazo ou necessidade de perita humana, abro a coleta de protocolo.`,
     });
   }
 
@@ -393,15 +531,27 @@ export default function ChatbotPrototype() {
         setIsLoading(false);
       }
     } else {
+      setIsCollectingTicket(true);
       setNotice(`${preparedFiles.length} documento(s) anexados. Eles serao enviados ao abrir o chamado.`);
+      appendMessage({
+        role: 'assistant',
+        type: 'text',
+        title: 'Documento recebido',
+        text:
+          'Recebi o anexo. Como documento pode envolver analise tecnica, vou abrir a coleta de dados para registrar um protocolo antes de enviar para a perita humana.',
+      });
     }
 
     event.target.value = '';
   }
 
   function validateTicketPayload(payload) {
-    if (!payload.name || !payload.email || !payload.subject || !payload.description) {
-      return 'Preencha nome, e-mail, assunto e descricao para abrir o chamado.';
+    if (!payload.name || !payload.email || !payload.phone || !payload.subject || !intake.objective?.trim()) {
+      return 'Preencha nome, e-mail, telefone, assunto e relato do caso para abrir o chamado.';
+    }
+
+    if (!intake.contestName?.trim() || !intake.boardName?.trim() || !intake.targetRole?.trim() || !intake.examStage?.trim()) {
+      return 'Informe concurso, banca, cargo e etapa. Se nao souber algum dado, escreva "nao sei" no campo correspondente.';
     }
 
     if (!intake.dataConsent) {
@@ -440,13 +590,20 @@ export default function ChatbotPrototype() {
 
       setLookupForm(lookup);
       setActiveTicket(refreshed.ticket);
+      setIsCollectingTicket(false);
+      appendMessage({
+        role: 'assistant',
+        type: 'text',
+        title: 'Protocolo aberto',
+        text:
+          `Protocolo aberto com sucesso: ${lookup.protocol}.\n\nSeu caso foi registrado e sera analisado por uma perita humana. Use este protocolo junto com seu e-mail para acompanhar o atendimento. Voce tambem pode enviar mensagens complementares ou anexar novos documentos enquanto aguarda a analise.`,
+      });
       appendMessage({
         role: 'assistant',
         type: 'protocol',
         record: ticketToRecord(refreshed.ticket),
       });
       setNotice(`Chamado ${lookup.protocol} aberto com sucesso.`);
-      setScreen('details');
     } catch (caughtError) {
       setError(caughtError.message);
     } finally {
@@ -589,6 +746,7 @@ export default function ChatbotPrototype() {
 
     try {
       const response = await askAssistant(trimmed, selectedConfig.label, buildAssistantHistory());
+      applyTriageDecision(trimmed, response.triage);
       appendMessage({
         role: 'assistant',
         type: 'text',
@@ -596,6 +754,10 @@ export default function ChatbotPrototype() {
         text: response.reply || buildQuickGuidance(trimmed, selectedArea),
       });
     } catch {
+      applyTriageDecision(trimmed, {
+        requires_ticket: shouldCollectProtocol(trimmed),
+        suggested_area_key: selectedArea,
+      });
       appendMessage({
         role: 'assistant',
         type: 'text',
@@ -657,7 +819,7 @@ export default function ChatbotPrototype() {
         <div className="phone-body">
           {renderFeedbackMessages()}
           <div className="phone-thread">
-            {messages.slice(-4).map((message) => (
+            {messages.slice(-6).map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}
@@ -673,6 +835,24 @@ export default function ChatbotPrototype() {
             ) : null}
             <div ref={transcriptEndRef} />
           </div>
+
+          {!isCollectingTicket ? (
+            <div className="assistant-mode-card">
+              <strong>Primeiro eu faco a triagem no chat.</strong>
+              <p>
+                Duvidas simples eu respondo agora. Se houver prazo, recurso, eliminacao, documento sensivel, laudo ou
+                necessidade de perita humana, eu abro a coleta de protocolo.
+              </p>
+              <div className="assistant-mode-actions">
+                <button type="button" onClick={() => setIsCollectingTicket(true)}>
+                  Quero abrir protocolo
+                </button>
+                <button type="button" onClick={() => fileInputRef.current?.click()}>
+                  Anexar documento
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="assistant-menu">
             {ENTRY_OPTIONS.map((option) => (
@@ -699,6 +879,7 @@ export default function ChatbotPrototype() {
             ))}
           </div>
 
+          {isCollectingTicket ? (
           <div className="triage-sheet">
             <div className="triage-sheet-head">
               <div>
@@ -729,6 +910,9 @@ export default function ChatbotPrototype() {
                 value={intake.subject}
                 onChange={handleFieldChange}
               />
+              {commonProtocolFields.map((field) => (
+                <ChatField key={field.name} field={field} value={intake[field.name]} onChange={handleFieldChange} />
+              ))}
               <ChatField
                 field={{
                   name: 'objective',
@@ -779,7 +963,7 @@ export default function ChatbotPrototype() {
             </label>
 
             <div className="triage-meta">
-              <span>{compactFields}/4 dados-base</span>
+              <span>{compactFields}/9 dados-base</span>
               <span>{selectedConfig.label}</span>
               <span>Perita humana como autoridade final</span>
             </div>
@@ -794,6 +978,7 @@ export default function ChatbotPrototype() {
               </button>
             </div>
           </div>
+          ) : null}
 
           <div className="phone-composer">
             <textarea
@@ -802,7 +987,10 @@ export default function ChatbotPrototype() {
               placeholder="Digite sua duvida ou conte o que aconteceu..."
               onChange={(event) => setChatInput(event.target.value)}
             />
-            <button className="compose-send" onClick={handleChatSubmit} aria-label="Enviar nota">
+            <button className="compose-attach" onClick={() => fileInputRef.current?.click()} aria-label="Anexar documento">
+              <Paperclip size={15} />
+            </button>
+            <button className="compose-send" onClick={handleChatSubmit} disabled={isAssistantTyping} aria-label="Enviar nota">
               <Send size={15} />
             </button>
           </div>

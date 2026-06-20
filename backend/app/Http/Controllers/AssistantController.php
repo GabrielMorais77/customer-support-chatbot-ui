@@ -32,6 +32,7 @@ class AssistantController extends Controller
             'success' => true,
             'reply' => $result['reply'],
             'source' => $result['source'],
+            'triage' => $result['triage'],
         ]);
     }
 }

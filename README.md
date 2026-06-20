@@ -109,19 +109,24 @@ O chat atua em tres frentes:
 
 O chat pode resolver duvidas simples e operacionais. Casos com laudo, parecer, prova documental sensivel, eliminacao controversa, acao contra banca ou documento assinado sao encaminhados para a perita humana.
 
+Na tela publica, o atendimento nao comeca como formulario de contato. Ele comeca como chat com IA 24/7. A IA se apresenta, explica seus limites, conversa com o usuario e so abre coleta de protocolo quando identifica responsabilidade tecnica, prazo, documento sensivel ou necessidade de analise humana.
+
 ## Fluxo Publico
 
 1. Usuario abre o atendimento.
-2. Ja encontra o assistente tecnico 24/7 na primeira tela.
-3. Escolhe uma frente: edital, estudos, duvida, recurso/revisao, laudo/parecer, acao contra banca ou perita humana.
-4. Conversa no chat com indicador de digitacao e resposta rapida do assistente.
-5. Preenche nome, e-mail, telefone, assunto, relato, prazo, campos tecnicos e consentimento de dados.
-6. Pode anexar documentos. Eles ficam vinculados ao chamado para o admin baixar e analisar.
-7. O frontend chama `POST /api/tickets`.
-8. O backend grava no SQLite, classifica urgencia por regra deterministica e gera protocolo `MIT-AAAA-000001`.
-9. Usuario consulta por protocolo e e-mail.
-10. Usuario envia mensagens complementares e novos documentos.
-11. Usuario envia avaliacao final, encerrando o chamado.
+2. Ja encontra uma mensagem inicial da IA explicando que ela e a primeira camada tecnica 24/7.
+3. Usuario escolhe uma frente ou descreve o problema no chat.
+4. O frontend chama `POST /api/assistant/chat`.
+5. O backend responde com `reply` e uma triagem: `simple` ou `sensitive`.
+6. Se for simples, a IA responde no proprio chat e pode perguntar se o usuario quer registrar atendimento formal.
+7. Se for sensivel, o chat abre a coleta de protocolo.
+8. Usuario preenche nome, e-mail, telefone, assunto, relato, concurso, banca, cargo, etapa, prazo, tipo do problema e consentimento de dados.
+9. Usuario pode anexar documentos. Eles ficam vinculados ao chamado para o admin baixar e analisar.
+10. O frontend chama `POST /api/tickets`.
+11. O backend grava no SQLite, classifica urgencia por regra deterministica e gera protocolo `MIT-AAAA-000001`.
+12. A IA informa o protocolo no chat e orienta o usuario a acompanhar com protocolo e e-mail.
+13. Usuario envia mensagens complementares e novos documentos.
+14. Usuario envia avaliacao final, encerrando o chamado.
 
 O `localStorage` ficou apenas para rascunho, ultimo protocolo/e-mail consultado e preferencias locais. A fonte principal dos chamados e o SQLite via API.
 
@@ -161,6 +166,8 @@ POST /api/tickets/{protocol}/attachments
 POST /api/tickets/{protocol}/messages
 POST /api/tickets/{protocol}/feedback
 ```
+
+`POST /api/assistant/chat` retorna `reply`, `source` e `triage`. O campo `triage.requires_ticket` indica quando o frontend deve abrir a coleta de protocolo para analise humana.
 
 ### Admin
 

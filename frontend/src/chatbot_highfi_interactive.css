@@ -520,6 +520,43 @@
   background: var(--flow-accent-wash);
 }
 
+.assistant-mode-card {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid rgba(181, 148, 95, 0.2);
+  border-radius: 16px;
+  background: #fffaf0;
+}
+
+.assistant-mode-card strong {
+  color: var(--flow-primary-strong);
+  font-size: 0.84rem;
+}
+
+.assistant-mode-card p {
+  margin: 0;
+  color: var(--flow-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.assistant-mode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assistant-mode-actions button {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--flow-primary);
+  background: #ffffff;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
 .message-shell {
   max-width: 86%;
   padding: 12px 14px;
@@ -556,6 +593,7 @@
   margin: 0;
   color: #2d3058;
   line-height: 1.55;
+  white-space: pre-wrap;
 }
 
 .message-time {
@@ -882,15 +920,26 @@
 
 .phone-composer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
   align-items: end;
 }
 
+.compose-attach,
 .compose-send {
   width: 38px;
   height: 38px;
   border-radius: 999px;
+}
+
+.compose-attach {
+  display: grid;
+  place-items: center;
+  color: var(--flow-primary);
+  background: var(--flow-accent-wash);
+}
+
+.compose-send {
   color: #ffffff;
   background: linear-gradient(135deg, var(--flow-primary) 0%, var(--flow-secondary) 100%);
 }
