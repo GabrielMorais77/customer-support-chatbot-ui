@@ -1,19 +1,12 @@
 import {
   ArrowLeft,
-  ArrowRight,
-  BadgeCheck,
   Bot,
-  ChevronRight,
-  Clock3,
   Ellipsis,
   FileText,
-  MessageCircleMore,
   Paperclip,
   Search,
   Send,
   Star,
-  Ticket,
-  UserRound,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import '../../chatbot_highfi_interactive.css';
@@ -29,7 +22,6 @@ import { AREA_CONFIG, EMPTY_INTAKE } from './config';
 import ChatField from './components/ChatField';
 import MessageBubble from './components/MessageBubble';
 import {
-  clearDraft,
   loadLastLookup,
   saveLastLookup,
 } from './storage';
@@ -41,18 +33,7 @@ import {
   makeId,
 } from './utils';
 
-const FLOW_STEPS = [
-  { id: 'assistant', title: 'Atendimento' },
-  { id: 'landing', title: 'Inicio' },
-  { id: 'tickets', title: 'Meus chamados' },
-  { id: 'queue', title: 'Mensagens' },
-  { id: 'details', title: 'Detalhes' },
-  { id: 'rating', title: 'Avaliacao' },
-  { id: 'comment', title: 'Comentario' },
-];
-
 const SCREEN_BACK_MAP = {
-  landing: 'assistant',
   tickets: 'assistant',
   queue: 'details',
   details: 'tickets',
@@ -113,29 +94,6 @@ const STATUS_LABELS = {
   closed: 'Encerrado',
 };
 
-function createWelcomeMessages() {
-  const createdAt = new Date().toISOString();
-
-  return [
-    {
-      id: 'welcome-1',
-      role: 'assistant',
-      type: 'text',
-      title: 'Assistente tecnico 24/7',
-      text: 'Sou a primeira camada de triagem para concursos publicos. Posso orientar sobre edital, estudos, duvidas simples, recursos e preparar casos complexos para a perita humana.',
-      createdAt,
-    },
-    {
-      id: 'welcome-2',
-      role: 'assistant',
-      type: 'text',
-      title: 'Seguranca e limites',
-      text: 'Nao substituo advogado ou perita, nao assino laudo e nao prometo aprovacao, anulacao de questao ou vitoria judicial.',
-      createdAt,
-    },
-  ];
-}
-
 function getInitialDraftState() {
   const lastLookup = loadLastLookup();
 
@@ -144,7 +102,7 @@ function getInitialDraftState() {
     selectedArea: DEFAULT_AREA,
     intake: PUBLIC_EMPTY_INTAKE,
     uploadedFiles: [],
-    messages: createWelcomeMessages(),
+    messages: [],
     lookupForm: { protocol: '', email: '', ...lastLookup },
     ratingForm: { stars: 5, rating: 5, comment: '' },
     commentDraft: '',
@@ -274,7 +232,7 @@ function TicketCard({ record, onOpenDetails, onOpenQueue }) {
   );
 }
 
-function PhoneHeader({ title, subtitle, showBack, onBack }) {
+function PhoneHeader({ title, subtitle, showBack, onBack, onMore }) {
   return (
     <header className="phone-header">
       <div className="phone-header-left">
@@ -292,7 +250,7 @@ function PhoneHeader({ title, subtitle, showBack, onBack }) {
           {subtitle ? <span>{subtitle}</span> : null}
         </div>
       </div>
-      <button className="phone-icon-button" aria-label="Mais opcoes">
+      <button className="phone-icon-button" onClick={onMore} aria-label="Mais opcoes">
         <Ellipsis size={16} />
       </button>
     </header>
@@ -321,8 +279,6 @@ export default function ChatbotPrototype() {
 
   const selectedConfig = AREA_CONFIG[selectedArea];
   const activeRecord = ticketToRecord(activeTicket);
-  const currentStep = FLOW_STEPS.find((item) => item.id === screen) || FLOW_STEPS[0];
-  const currentStepIndex = FLOW_STEPS.findIndex((item) => item.id === currentStep.id);
   const compactFields = [intake.clientName, intake.email || intake.phone, intake.subject, intake.objective]
     .filter(Boolean)
     .length;
@@ -351,16 +307,6 @@ export default function ChatbotPrototype() {
     setError('');
     setNotice('');
     setScreen(targetScreen);
-  }
-
-  function goToAdjacentStep(direction) {
-    const nextIndex = currentStepIndex + direction;
-
-    if (nextIndex < 0 || nextIndex >= FLOW_STEPS.length) {
-      return;
-    }
-
-    goToScreen(FLOW_STEPS[nextIndex].id);
   }
 
   function handleBack() {
@@ -661,23 +607,6 @@ export default function ChatbotPrototype() {
     }
   }
 
-  function handleResetPrototype() {
-    setScreen('assistant');
-    setSelectedArea(DEFAULT_AREA);
-    setIntake(PUBLIC_EMPTY_INTAKE);
-    setUploadedFiles([]);
-    setMessages(createWelcomeMessages());
-    setLookupForm({ protocol: '', email: '' });
-    setActiveTicket(null);
-    setChatInput('');
-    setRatingForm({ stars: 5, rating: 5, comment: '' });
-    setCommentDraft('');
-    setError('');
-    setNotice('');
-    clearDraft();
-    saveLastLookup({ protocol: '', email: '' });
-  }
-
   function renderFeedbackMessages() {
     return (
       <>
@@ -715,32 +644,16 @@ export default function ChatbotPrototype() {
     );
   }
 
-  function renderLandingScreen() {
-    return (
-      <div className="screen-home">
-        <div className="screen-sitebar">
-          <span>Concursos Publicos</span>
-          <button onClick={() => goToScreen('tickets')}>Protocolos</button>
-        </div>
-        <div className="screen-home-center">
-          <h2>Assistente tecnico 24/7</h2>
-          <p>Editais, estudos, recursos, revisoes e encaminhamento para perita humana.</p>
-          <button className="phone-primary-button" onClick={() => goToScreen('assistant')}>
-            Abrir atendimento
-          </button>
-        </div>
-        <button className="chat-fab" onClick={() => goToScreen('assistant')} aria-label="Abrir atendimento">
-          <span className="chat-fab-badge">Online</span>
-          <MessageCircleMore size={20} />
-        </button>
-      </div>
-    );
-  }
-
   function renderAssistantScreen() {
     return (
       <>
-        <PhoneHeader title="Assistente Tecnico" subtitle="Concursos publicos" showBack={false} onBack={handleBack} />
+        <PhoneHeader
+          title="Assistente Tecnico"
+          subtitle="Concursos publicos"
+          showBack={false}
+          onBack={handleBack}
+          onMore={() => goToScreen('tickets')}
+        />
         <div className="phone-body">
           {renderFeedbackMessages()}
           <div className="phone-thread">
@@ -1126,8 +1039,6 @@ export default function ChatbotPrototype() {
 
   function renderPhoneScreen() {
     switch (screen) {
-      case 'landing':
-        return renderLandingScreen();
       case 'assistant':
         return renderAssistantScreen();
       case 'tickets':
@@ -1141,12 +1052,12 @@ export default function ChatbotPrototype() {
       case 'comment':
         return renderCommentScreen();
       default:
-        return renderLandingScreen();
+        return renderAssistantScreen();
     }
   }
 
   return (
-    <div className="flow-app">
+    <div className="flow-app public-chat-shell">
       <input
         ref={fileInputRef}
         className="hidden-file-input"
@@ -1155,162 +1066,13 @@ export default function ChatbotPrototype() {
         onChange={handleFileUpload}
       />
 
-      <header className="flow-hero">
-        <div>
-          <p className="hero-kicker">Concursos publicos</p>
-          <h1>Assistente Tecnico 24/7 para Concursos Publicos.</h1>
-          <p className="hero-copy">
-            Triagem inteligente para editais, planos de estudo, recursos, revisoes, laudos e casos que precisam de
-            perita humana.
-          </p>
+      <div className="phone-stage public-phone-stage">
+        <div className="phone-device public-phone-device">
+          <div className="phone-notch" />
+          <div className="phone-screen">{renderPhoneScreen()}</div>
+          <div className="phone-home-indicator" />
         </div>
-        <div className="hero-status-stack">
-          <article>
-            <span>Frente ativa</span>
-            <strong>{selectedConfig.label}</strong>
-          </article>
-          <article>
-            <span>Protocolo</span>
-            <strong>{activeTicket?.protocol || lookupForm.protocol || 'MIT-0000-000000'}</strong>
-          </article>
-          <article>
-            <span>Status</span>
-            <strong>{getStatusLabel(activeTicket?.status)}</strong>
-          </article>
-        </div>
-      </header>
-
-      <main className="prototype-grid">
-        <section className="prototype-phone-panel">
-          <div className="interactive-header">
-            <div>
-              <p className="panel-kicker">Atendimento interativo</p>
-              <h2>{currentStep.title}</h2>
-            </div>
-            <div className="stage-nav">
-              <button className="stage-nav-button" onClick={() => goToAdjacentStep(-1)} disabled={currentStepIndex <= 0}>
-                <ArrowLeft size={14} />
-                Anterior
-              </button>
-              <button
-                className="stage-nav-button"
-                onClick={() => goToAdjacentStep(1)}
-                disabled={currentStepIndex >= FLOW_STEPS.length - 1}
-              >
-                Proxima
-                <ArrowRight size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div className="stage-pills">
-            {FLOW_STEPS.map((screenItem) => (
-              <button
-                key={screenItem.id}
-                className={`stage-pill ${screen === screenItem.id ? 'is-active' : ''}`}
-                onClick={() => goToScreen(screenItem.id)}
-              >
-                {screenItem.title}
-              </button>
-            ))}
-          </div>
-
-          <div className="active-stage-note">
-            <span>Etapa atual</span>
-            <strong>
-              {currentStepIndex + 1} de {FLOW_STEPS.length}
-            </strong>
-            <p>Primeira camada tecnica: orienta o simples e prepara o complexo para revisao humana.</p>
-          </div>
-
-          <div className="phone-stage">
-            <div className="phone-device">
-              <div className="phone-notch" />
-              <div className="phone-screen">{renderPhoneScreen()}</div>
-              <div className="phone-home-indicator" />
-            </div>
-          </div>
-        </section>
-
-        <aside className="prototype-side-panel">
-          <article className="side-card side-card-primary">
-            <div className="side-card-head">
-              <BadgeCheck size={18} />
-              <h3>Camada tecnica</h3>
-            </div>
-            <p>
-              O chat interpreta informacoes basicas, organiza documentos e gera protocolo real no SQLite.
-            </p>
-            <div className="side-tags">
-              <span>{activeTicket ? getStatusLabel(activeTicket.status) : 'Atendimento aberto'}</span>
-              <span>{uploadedFiles.length} documento(s)</span>
-            </div>
-          </article>
-
-          <article className="side-card">
-            <div className="side-card-head">
-              <Ticket size={18} />
-              <h3>Checklist da triagem</h3>
-            </div>
-            <ul className="side-list">
-              <li>{intake.clientName ? 'Nome do candidato informado.' : 'Falta nome do candidato.'}</li>
-              <li>{intake.email ? 'E-mail informado.' : 'Falta e-mail para consulta publica.'}</li>
-              <li>{intake.subject && intake.objective ? 'Relato inicial registrado.' : 'Falta assunto ou relato do caso.'}</li>
-              <li>{intake.dataConsent ? 'Consentimento registrado.' : 'Falta consentimento para tratamento dos dados.'}</li>
-            </ul>
-          </article>
-
-          <article className="side-card">
-            <div className="side-card-head">
-              <Clock3 size={18} />
-              <h3>Quando encaminhar</h3>
-            </div>
-            <ul className="side-list">
-              <li>Laudo, parecer ou documento assinado.</li>
-              <li>Eliminacao, cota, PCD, PPP, TAF ou avaliacao psicologica.</li>
-              <li>Prazo urgente, recurso negado ou possivel medida judicial.</li>
-            </ul>
-          </article>
-
-          <article className="side-card">
-            <div className="side-card-head">
-              <FileText size={18} />
-              <h3>Protocolo ativo</h3>
-            </div>
-            <div className="history-compact-list">
-              {activeRecord ? (
-                <button className="history-compact-card is-active" onClick={() => goToScreen('details')}>
-                  <strong>{activeRecord.protocol}</strong>
-                  <span>{activeRecord.areaLabel}</span>
-                  <small>{activeRecord.status}</small>
-                </button>
-              ) : (
-                <button className="history-compact-card" onClick={() => goToScreen('tickets')}>
-                  <strong>Consultar protocolo</strong>
-                  <span>Use protocolo e e-mail</span>
-                  <small>Publico</small>
-                </button>
-              )}
-            </div>
-          </article>
-
-          <article className="side-card side-card-footer">
-            <div className="side-card-head">
-              <UserRound size={18} />
-              <h3>Painel admin</h3>
-            </div>
-            <p>A equipe humana ve a fila, responde, muda status e encerra protocolos em /admin.</p>
-            <button className="reset-button" onClick={() => { window.location.href = '/admin'; }}>
-              Abrir admin
-              <ChevronRight size={14} />
-            </button>
-            <button className="reset-button reset-button-secondary" onClick={handleResetPrototype}>
-              Reiniciar
-              <ChevronRight size={14} />
-            </button>
-          </article>
-        </aside>
-      </main>
+      </div>
     </div>
   );
 }

@@ -20,6 +20,11 @@ class TicketController extends Controller
 
         $query = Ticket::query()
             ->withCount('messages')
+            ->withCount([
+                'messages as agent_messages_count' => fn ($query) => $query->where('sender_type', 'agent'),
+                'messages as visitor_messages_count' => fn ($query) => $query->where('sender_type', 'visitor'),
+                'messages as system_messages_count' => fn ($query) => $query->where('sender_type', 'system'),
+            ])
             ->withCount('attachments')
             ->latest();
 
@@ -134,6 +139,9 @@ class TicketController extends Controller
             'created_at' => $ticket->created_at?->toISOString(),
             'updated_at' => $ticket->updated_at?->toISOString(),
             'messages_count' => $ticket->messages_count ?? $ticket->messages()->count(),
+            'agent_messages_count' => $ticket->agent_messages_count ?? $ticket->messages()->where('sender_type', 'agent')->count(),
+            'visitor_messages_count' => $ticket->visitor_messages_count ?? $ticket->messages()->where('sender_type', 'visitor')->count(),
+            'system_messages_count' => $ticket->system_messages_count ?? $ticket->messages()->where('sender_type', 'system')->count(),
             'attachments_count' => $ticket->attachments_count ?? $ticket->attachments()->count(),
         ];
     }
