@@ -1,0 +1,4 @@
+requests
+pymupdf
+mysql-connector-python
+python-dotenv

@@ -68,6 +68,13 @@ export async function askAssistant(message, area, history = []) {
   });
 }
 
+export async function askConcursosChat(data) {
+  return request('/chat-concursos', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 function buildTicketFormData(data, files = []) {
   const formData = new FormData();
 

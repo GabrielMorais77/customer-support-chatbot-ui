@@ -2,99 +2,17 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Throwable;
-
 class AssistantChatService
 {
     public function reply(string $message, ?string $area = null, array $history = []): array
     {
         $triage = $this->classifyCase($message, $area);
 
-        if ($this->canUseOpenRouter()) {
-            try {
-                return [
-                    'reply' => $this->openRouterReply($message, $area, $history),
-                    'source' => 'openrouter',
-                    'triage' => $triage,
-                ];
-            } catch (Throwable) {
-                // The MVP must stay usable even when the free provider is unavailable or rate-limited.
-            }
-        }
-
         return [
             'reply' => $this->localReply($message, $area, $triage),
             'source' => 'local',
             'triage' => $triage,
         ];
-    }
-
-    private function canUseOpenRouter(): bool
-    {
-        return (bool) env('OPENROUTER_API_KEY');
-    }
-
-    private function openRouterReply(string $message, ?string $area, array $history): string
-    {
-        $messages = [
-            [
-                'role' => 'system',
-                'content' => $this->systemPrompt($area),
-            ],
-        ];
-
-        foreach (array_slice($history, -6) as $item) {
-            $messages[] = [
-                'role' => $item['role'],
-                'content' => $item['content'],
-            ];
-        }
-
-        $messages[] = [
-            'role' => 'user',
-            'content' => $message,
-        ];
-
-        $response = Http::withToken(env('OPENROUTER_API_KEY'))
-            ->acceptJson()
-            ->asJson()
-            ->withHeaders([
-                'HTTP-Referer' => env('APP_URL', 'http://localhost:8000'),
-                'X-OpenRouter-Title' => 'Assistente Tecnico para Concursos Publicos',
-            ])
-            ->timeout(18)
-            ->post('https://openrouter.ai/api/v1/chat/completions', [
-                'model' => env('OPENROUTER_MODEL', 'deepseek/deepseek-r1:free'),
-                'messages' => $messages,
-                'temperature' => 0.3,
-                'max_tokens' => 450,
-            ])
-            ->throw()
-            ->json();
-
-        $reply = $response['choices'][0]['message']['content'] ?? null;
-
-        if (! is_string($reply) || trim($reply) === '') {
-            throw new \RuntimeException('Empty AI response.');
-        }
-
-        return trim($reply);
-    }
-
-    private function systemPrompt(?string $area): string
-    {
-        $context = $area ? "Frente selecionada: {$area}." : 'Frente ainda nao selecionada.';
-
-        return <<<PROMPT
-Voce e um assistente tecnico 24/7 para concursos publicos. {$context}
-Atue como primeira camada de triagem, orientacao e preparacao de casos para perita humana.
-Pode explicar edital, requisitos, datas, etapas, estudos, revisoes, documentos, recursos simples e estrategia de prova.
-Nao substitua advogado, nao substitua perita, nao assine laudo, nao prometa aprovacao, anulacao de questao ou vitoria judicial.
-Para laudo, parecer, eliminacao controversa, cotas, PCD, heteroidentificacao, pericia medica, TAF, avaliacao psicologica, prova oral, processo judicial ou prazo urgente, oriente a organizar documentos e encaminhar para analise humana.
-Nao abra protocolo para toda mensagem. Primeiro faca triagem: resolva duvidas simples no chat e so recomende protocolo quando houver risco tecnico, documento sensivel, prazo, recurso, eliminacao ou necessidade de perita humana.
-Responda em portugues do Brasil, de forma curta, pratica e segura.
-PROMPT;
     }
 
     private function localReply(string $message, ?string $area, array $triage): string
@@ -117,8 +35,8 @@ TEXT;
             return 'Classificacao significa que o candidato ficou ordenado no resultado do concurso, conforme nota e regras do edital. Convocacao e o chamado oficial para uma proxima etapa, entrega de documentos, curso, posse ou nomeacao. Em geral, estar classificado nao garante convocacao: isso depende de vagas, cadastro reserva, validade do concurso e atos oficiais do orgao.';
         }
 
-        if ($this->containsAnyTerm($text, ['recurso', 'gabarito', 'questao'])) {
-            return 'Para recurso, envie edital, caderno de prova, questao, gabarito, alternativa marcada, fundamento tecnico, bibliografia e prazo. Posso ajudar na estrutura, sem prometer anulacao ou deferimento.';
+        if ($this->containsAnyTerm($text, ['recurso', 'revisao', 'redacao', 'discursiva', 'gabarito', 'questao'])) {
+            return 'Para recurso ou revisao de redacao/prova discursiva, envie edital, espelho de correcao, texto produzido, nota, criterios da banca, decisao/justificativa e prazo. Vou organizar o protocolo para analise da perita humana, sem prometer alteracao de nota ou deferimento.';
         }
 
         if ($this->containsAnyTerm($text, ['estudo', 'cronograma', 'simulado'])) {
@@ -152,12 +70,12 @@ TEXT;
                 'terms' => ['acao', 'judicial', 'liminar', 'mandado', 'advogado', 'processo', 'direito liquido', 'banca errou'],
             ],
             'recursoRevisao' => [
-                'reason' => 'recurso, revisao de prova, nota, gabarito ou eliminacao',
-                'terms' => ['recurso', 'revisao', 'gabarito', 'questao anulada', 'nota', 'discursiva', 'espelho', 'eliminacao', 'indeferimento'],
+                'reason' => 'recurso, revisao de prova/redacao, nota, gabarito ou eliminacao',
+                'terms' => ['recurso', 'revisao', 'redacao', 'gabarito', 'questao anulada', 'nota', 'discursiva', 'espelho', 'eliminacao', 'indeferimento'],
             ],
             'peritaHumana' => [
                 'reason' => 'tema sensivel que exige analise humana',
-                'terms' => ['pcd', 'heteroidentificacao', 'pericia medica', 'taf', 'cota', 'ppp', 'avaliacao psicologica', 'prova oral'],
+                'terms' => ['perita', 'pericia', 'pericia medica', 'falar com perita', 'analise profissional', 'abrir protocolo', 'quero abrir protocolo', 'pcd', 'heteroidentificacao', 'taf', 'cota', 'ppp', 'avaliacao psicologica', 'prova oral'],
             ],
         ];
 

@@ -5,7 +5,8 @@
   "keywords": [
     "laravel",
     "support",
-    "sqlite"
+    "mysql",
+    "tidb"
   ],
   "license": "MIT",
   "require": {
